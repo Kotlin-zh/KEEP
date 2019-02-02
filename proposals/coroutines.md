@@ -66,17 +66,17 @@
 最能描述协程功能用例是异步计算（在 C# 及其他语言中通过 `async`/`await` 实现）。让我们来看看如何使用回调来完成这些计算。不妨以异步 I/O 为例（下面的 API 经过简化）：
 
 ```kotlin
-// 异步读数据到 `buf`，完成后执行 λ
+// 异步读数据到 `buf`，完成后执行 lambda 表达式
 inChannel.read(buf) {
-    // 这个 λ 会在读完后执行
+    // 这个 lambda 表达式会在读完后执行
     bytesRead ->
     ...
     ...
     process(buf, bytesRead)
     
-    // 异步从 `buf` 写数据, 完成后执行 λ
+    // 异步从 `buf` 写数据, 完成后执行 lambda 表达式
     outChannel.write(buf) {
-        // 这个 λ 会在写完后执行
+        // 这个 lambda 表达式会在写完后执行
         ...
         ...
         outFile.close()          
@@ -105,7 +105,7 @@ launch {
 }
 ```
 
-`aRead()` 和 `aWrite()` 是特别的*挂起函数* —— 它们可以*挂起* 代码执行（这并不意味着阻塞运行他们的线程），然后在调用完成时*恢复*  代码执行。如果我们眯着眼睛去想象所有在 `aRead()` 之后的代码已经被包装成一个 lambda 传给 `aRead()` 作为回调，再对 `aWrite()` 做同样的事情，我们就可以看到和上面相同的代码，只是可读性增加了。
+`aRead()` 和 `aWrite()` 是特别的*挂起函数* —— 它们可以*挂起* 代码执行（这并不意味着阻塞运行他们的线程），然后在调用完成时*恢复*  代码执行。如果我们眯着眼睛去想象所有在 `aRead()` 之后的代码已经被包装成一个 lambda 表达式传给 `aRead()` 作为回调，再对 `aWrite()` 做同样的事情，我们就可以看到和上面相同的代码，只是可读性增加了。
 
 以一种非常通用的方式支持协程是我们的明确目标，所以在这个例子中，`launch{}`、`.aRead()` 和 `.aWrite()` 只是适应协程工作的库函数；`launch` 是*协程建造者* —— 它创建并启动协程；`aRead()` 和 `aWrite()` 作为特别的*挂起函数* 隐式地接受*续体*（[*续体*](https://aisia.moe/2018/02/08/kotlin-coroutine-kepa/) 就是一般的回调）。
 
@@ -223,7 +223,7 @@ val seq = sequence {
 
 ```kotlin
 makeAsyncRequest {
-    // 异步操作完成时执行这个 λ
+    // 异步操作完成时执行这个 lambda 表达式
     result, exception ->
     
     if (exception == null) {
@@ -274,15 +274,15 @@ launch(Swing) {
 
 * *协程* —— *可挂起计算* 的*实例* 。它在概念上类似于一个线程，在这个意义上，它需要一个代码块运行，并具有类似的生命周期 —— 它可以被创建和启动，但它不绑定到任何特定的线程。它可以在一个线程中*挂起* 其执行， 并在另一个线程中*恢复* 。而且，像期货或诺言那样，它在*完成* 时可能伴随着结果（值或异常）。
 
-* *挂起函数* —— `suspend` 修饰符标记的函数。它可能会通过调用其他挂起函数*挂起* 执行代码，而不阻塞当前执行线程。一个挂起函数不能在常规代码中被调用，只能在其他挂起函数或挂起 lambda 中（见下方）。举个例子，如用例所示的 `.await()` 和 `yield()` 是在库中定义的挂起函数。标准库提供了用于定义其他所有挂起函数所使用的基础挂起函数。
+* *挂起函数* —— `suspend` 修饰符标记的函数。它可能会通过调用其他挂起函数*挂起* 执行代码，而不阻塞当前执行线程。一个挂起函数不能在常规代码中被调用，只能在其他挂起函数或挂起 lambda 表达式中（见下方）。举个例子，如用例所示的 `.await()` 和 `yield()` 是在库中定义的挂起函数。标准库提供了用于定义其他所有挂起函数所使用的基础挂起函数。
 
-* *挂起 lambda* —— 一个必须在协程中运行的代码块。它看起来完全像一个普通的 lambda 表达式，但它的函数类型被  `suspend` 修饰符标记。就像常规 lambda 表达式是匿名局部函数的短语法形式一样，挂起 lambda 是匿名挂起函数的短语法形式。它可能会通过调用其他挂起函数*挂起* 执行代码，而不阻塞当前执行线程。举个例子，如用例所示，跟在 `launch` , `future` , 和 `BuildSequence` 函数后面花括号里的代码块，就是挂起 lambda。
+* *挂起 lambda 表达式* —— 一个必须在协程中运行的代码块。它看起来完全像一个普通的 lambda 表达式，但它的函数类型被  `suspend` 修饰符标记。就像常规 lambda 表达式是匿名局部函数的短语法形式一样，挂起 lambda 表达式 是匿名挂起函数的短语法形式。它可能会通过调用其他挂起函数*挂起* 执行代码，而不阻塞当前执行线程。举个例子，如用例所示，跟在 `launch` , `future` , 和 `BuildSequence` 函数后面花括号里的代码块，就是挂起 lambda 表达式。
 
-  > 注意：如果允许 lambda 使用非局部的返回语句，则挂起 lambda 可以在代码的任意位置调用挂起函数。意思是说，可以在像 `apply{}` 这样的内联 lambda 中调用挂起函数，但在 `noinline` 和 `crossinline` 修饰的 lambda 中就不行。*挂起* 会被视作是一种特殊的非局部控制转移。
+  > 注意：如果允许 lambda 表达式使用非局部的返回语句，则挂起 lambda 表达式可以在代码的任意位置调用挂起函数。意思是说，可以在像 `apply{}` 这样的内联 lambda 表达式中调用挂起函数，但在 `noinline` 和 `crossinline` 修饰的 lambda 表达式中就不行。*挂起* 会被视作是一种特殊的非局部控制转移。
 
-* *挂起函数类型*  —— 挂起函数和挂起 lambda 的函数类型。它就像一个常规的函数类型，但具有 `suspend` 修饰符。举个例子，`suspend () -> Int ` 是一个没有参数、返回 `Int` 的挂起函数的函数类型。一个像这样声明 —— `suspend fun foo(): Int` 的挂起函数符合上述函数类型。
+* *挂起函数类型*  —— 挂起函数和挂起 lambda 表达式的函数类型。它就像一个常规的函数类型，但具有 `suspend` 修饰符。举个例子，`suspend () -> Int ` 是一个没有参数、返回 `Int` 的挂起函数的函数类型。一个像这样声明 —— `suspend fun foo(): Int` 的挂起函数符合上述函数类型。
 
-* *协程建造者* —— 使用一些挂起 lambda 作为参数，创建一个协程，可选地提供某种形式的对其结果的访问的函数。举个例子，用例中的 `launch{}`, `future{}`, 和 `sequence{}` 是库中定义的协程建造者。 标准库提供了用于定义其他所有协程建造者所使用的基础协程建造者。
+* *协程建造者* —— 使用一些挂起 lambda 表达式作为参数，创建一个协程，可选地提供某种形式的对其结果的访问的函数。举个例子，用例中的 `launch{}`, `future{}`, 和 `sequence{}` 是库中定义的协程建造者。 标准库提供了用于定义其他所有协程建造者所使用的基础协程建造者。
 
 * *挂起点* —— 协程执行过程中可能会被*挂起* 的位置。从语法上说，一个挂起点是对一个挂起函数的调用，但*实际* 的挂起在挂起函数调用了标准库中的原始挂起函数时发生。
 
@@ -297,7 +297,7 @@ launch(Swing) {
 
   在这里，每次调用挂起函数 `yield()`，协程挂起时，*其执行的剩余* 被看作续体，所以我们有 10 个续体：第一次运行循环后 `i=2` ，挂起；第二次运行循环后 `i=3`，挂起……最后一个打印 "over" 并完成协程。该协程在此创建，但尚未启动，由它的初始*续体* 所表示，后者由它整个执行组成，类型为 `Continuation<Unit> ` 。
 
-如上所述，驱动协程的要求之一是灵活性：我们希望能够支持许多现有的异步 API 和其他用例,，并将硬编码到编译器中的部分最小化。因此，编译器只负责支持挂起函数、挂起 lambda 时和相应的挂起函数类型。标准库中的原始函数很少， 其余的则留给应用程序库。
+如上所述，驱动协程的要求之一是灵活性：我们希望能够支持许多现有的异步 API 和其他用例，并将硬编码到编译器中的部分最小化。因此，编译器只负责支持挂起函数、挂起 lambda 表达式和相应的挂起函数类型。标准库中的原始函数很少，其余的则留给应用程序库。
 
 ### 续体接口
 
@@ -538,7 +538,7 @@ fun <T> (suspend () -> T).createCoroutine(completion: Continuation<T>): Continua
 fun <R, T> (suspend R.() -> T).createCoroutine(receiver: R, completion: Continuation<T>): Continuation<Unit>
 ```
 
-另一个不同点是传递给建造者的*挂起 λ* `block` 是具有 `SequenceScope<T>` 接收者的[扩展 λ](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。`SequenceScope<T>` 接口提供了生产者代码块的作用域，其在库中定义如下：
+另一个不同点是传递给建造者的*挂起 lambda 表达式* `block` 是具有 `SequenceScope<T>` 接收者的[扩展 lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。`SequenceScope<T>` 接口提供了生产者代码块的作用域，其在库中定义如下：
 
 ```kotlin
 interface SequenceScope<in T> {
@@ -586,9 +586,9 @@ interface SequenceScope<in T> {
 }
 ```
 
-这个注解对能用在 `sequence{}` 域或其他类似的同步协程建造者中的挂起函数有一定的限制。那些扩展*限定性挂起域* 类或接口（以 `@RestrictsSuspension` 标记）的挂起 λ 或函数称作*限定性挂起函数*。限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
+这个注解对能用在 `sequence{}` 域或其他类似的同步协程建造者中的挂起函数有一定的限制。那些扩展*限定性挂起域* 类或接口（以 `@RestrictsSuspension` 标记）的挂起 lambda 表达式或函数称作*限定性挂起函数*。限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
 
-回到这个例子，这意味着 `SequenceScope` 范围内 λ 的扩展不能调用 `suspendCOntinuation` 或其他通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 `SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` 实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 λ  和函数是限定的）。
+回到这个例子，这意味着 `SequenceScope` 范围内 lambda 表达式的扩展不能调用 `suspendContinuation` 或其他通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 `SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` 实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 lambda 表达式和函数是限定的）。
 
 对于像 `sequence` 这样的限定性协程建造者，支持任意上下文是没有意义的，因为其作用类或接口（比如这个例子里的 `SequenceScope`）已经占用了上下文能提供的服务，因此限定性协程只能使用 `EmptyCoroutineContext` 作为上下文，`SequenceCouroutine` 的取值器实现也会返回这个。尝试创建上下文不是 `EmptyCoroutineSContext` 的限定性协程会引发 `IllegalArgumentException`。
 
@@ -598,7 +598,7 @@ interface SequenceScope<in T> {
 
 ### 续体传递风格
 
-挂起函数通过 Continuation-Passing-Style (CPS) 实现。每个挂起函数和挂起 λ 都会在调用时隐式地传入一个附加的 `Continuation` 参数。回想一下，[`await` 挂起函数](#挂起函数) 的声明是这样的：
+挂起函数通过 Continuation-Passing-Style (CPS) 实现。每个挂起函数和挂起 lambda 表达式都会在调用时隐式地传入一个附加的 `Continuation` 参数。回想一下，[`await` 挂起函数](#挂起函数) 的声明是这样的：
 
 ```kotlin
 suspend fun <T> CompletableFuture<T>.await(): T
@@ -616,7 +616,7 @@ fun <T> CompletableFuture<T>.await(continuation: Continuation<T>): Any?
 
 ### 状态机
 
-协程实现的性能是非常重要的，这需要尽可能少地创建类和对象。许多语言通过*状态机* 实现，Kotlin 也是这样做的。对于 Kotlin，使用此方法让编译器为每个挂起 λ 创建一个其中可能有任意数量挂起点的类。
+协程实现的性能是非常重要的，这需要尽可能少地创建类和对象。许多语言通过*状态机* 实现，Kotlin 也是这样做的。对于 Kotlin，使用此方法让编译器为每个挂起 lambda 表达式创建一个其中可能有任意数量挂起点的类。
 
 主要思想：挂起函数编译为状态机，其状态对应着挂起点。示例：弄一个有两个挂起点的挂起代码块：
 
