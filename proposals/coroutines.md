@@ -122,8 +122,8 @@ launch {
 
 这里的 `aRead()` 和 `aWrite()` 是特殊的*挂起函数* —— 它们可以*挂起* 代码执行<!--
 -->（这并不意味着阻塞正在运行它的线程），然后在调用完成时*恢复* 代码执行。<!--
--->如果我们眯起眼睛，可以想象所有在 `aRead()` 之后的代码已经被包装成一个<!--
---> lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此，<!--
+-->如果我们眯起眼睛，可以想象所有在 `aRead()` 之后的代码已经被包装成一个 <!--
+-->lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此，<!--
 -->我们就可以看到这个代码和上面的一样，可读性却更强。
 
 我们的明确目标是以一种非常通用的方式支持协程，所以在这个例子中，<!--
@@ -196,10 +196,12 @@ val future = future {
 
 ### 生产者
 
-协程的另一个典型用例是延时计算序列（在 C#、Python 和很多其他语言中通过 `yield`  实现）。这样的序列可以由看似连续的代码生成，但在运行时只计算真正用到的元素。
+协程的另一个典型用例是延时计算序列（在 C#、Python <!--
+-->和很多其他语言中通过 `yield`  实现）。这样的序列可以由看似连续的代码生成，但在运行时只<!--
+-->计算真正用到的元素：
 
 ```kotlin
-// 类型推断为 Sequence<Int>
+// 推断出类型为 Sequence<Int>
 val fibonacci = sequence {
     yield(1) // 斐波那契数列的首项
     var cur = 1
@@ -213,15 +215,20 @@ val fibonacci = sequence {
 }
 ```
 
-代码创建里一个表示[斐波那契数列](https://zhuanlan.zhihu.com/p/26752744)的延迟序列，它可以是无限长的（类似[Haskell 中的无限长列表](http://www.techrepublic.com/article/infinite-list-tricks-in-haskell/)）。我们可以计算其中一些，例如，通过 `take()`：
+代码创建了一个表示[斐波那契数列](https://zhuanlan.zhihu.com/p/26752744)的延迟序列，<!--
+-->它可以是无限长的<!--
+-->（类似 [Haskell 的无限长列表](http://www.techrepublic.com/article/infinite-list-tricks-in-haskell/)）。<!--
+-->我们可以只计算其中一些，例如，通过 `take()`：
 
 ```kotlin
 println(fibonacci.take(10).joinToString())
 ```
 
-> 这会打印出 `1, 1, 2, 3, 5, 8, 13, 21, 34, 55 `。你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/fibonacci.kt)试一下。
+> 这会打印出 `1, 1, 2, 3, 5, 8, 13, 21, 34, 55`。<!--
+-->你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/fibonacci.kt)试一下。
 
-生产者中支持任意的控制流，包括但不限于 `while`、`if`、`try`/`catch`/`finally`：
+生产者的优势在于支持任意的控制流，包括但不限于 `while`、<!--
+-->`if`、`try`/`catch`/`finally`：
 
 ```kotlin
 val seq = sequence {
@@ -243,9 +250,12 @@ val seq = sequence {
 } 
 ```
 
-> 关于 `sequence{}` 和 `yield()` 的示例代码在[限定挂起](#限定挂起)一节。
+> 关于 `sequence{}` 和 `yield()` 的示例代码在<!--
+-->[限定挂起](#限定挂起)一节。
 
-注意，这种方法还允许把 `yieldAll(sequence)` 表示为库函数（像 `sequence{}` 和 `yield()` 那样），这能简化延时序列的连接操作，并允许高效的实现。
+注意，这种方法还允许把 `yieldAll(sequence)` 表示为库函数<!--
+-->（像 `sequence{}` 和 `yield()` 那样），这能简化延时序列的连接操作，<!--
+-->并提升了性能。
 
 ### 异步用户界面
 
