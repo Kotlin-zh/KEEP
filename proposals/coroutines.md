@@ -187,7 +187,7 @@ val future = future {
 }
 ```
 
-> 关于 `future{}` 的示例代码在[创建 Future](#构建-Future) 一节，<!--
+> 关于 `future{}` 的示例代码在[构建 Future](#构建-Future) 一节，<!--
 -->关于 `await()` 的示例代码在[挂起函数](#挂起函数)一节。
 
 再一次，协程对 future 的支持减少了缩进级别、逻辑（以及异常处理，这里没有出现）更加自然，<!--
@@ -338,7 +338,7 @@ launch(Swing) {
   -->其他所有挂起函数。
 
 * *挂起 lambda 表达式* —— 必须在协程中运行的代码块。<!--
-  -->它看起来很像一个普通的 [lambda 表达式](https://kotlinlang.org/docs/  reference/lambdas.html)，<!--
+  -->它看起来很像一个普通的 [lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html)，<!--
   -->但它的函数类型被 `suspend` 修饰符标记。<!--
   -->就像常规 lambda 表达式是匿名局部函数的短语法形式一样，<!--
   -->挂起 lambda 表达式是匿名挂起函数的短语法形式。它可能会通过调用其他挂起函数*挂起* 执行代码，<!--
@@ -354,7 +354,7 @@ launch(Swing) {
   -->*挂起* 会被视作是一种特殊的非局部控制转移。
 
 * *挂起函数类型*  —— 表示挂起函数和挂起 lambda 表达式的函数类型。它就像<!--
-  -->一个一般的[函数类型](https://kotlinlang.org/docs/reference/  lambdas.html#function-types)，<!--
+  -->一个一般的[函数类型](https://kotlinlang.org/docs/reference/lambdas.html#function-types)，<!--
   -->但具有 `suspend` 修饰符。举个例子，`suspend () -> Int` 是<!--
   -->一个没有参数、返回 `Int` 的挂起函数的函数类型。一个声明为 `suspend fun foo()  : Int` 的挂起函数<!--
   -->符合上述函数类型。
