@@ -46,7 +46,7 @@
   * [并发和线程](#并发和线程)
   * [异步编程风格](#异步编程风格)
   * [包装回调](#包装回调)
-  * [构建 Future](#构建 Future)
+  * [构建 Future](#构建-Future)
   * [非阻塞睡眠](#非阻塞睡眠)
   * [协作式单线程多任务](#协作式单线程多任务)
   * [异步序列](#异步序列)
@@ -56,11 +56,11 @@
   * [参考](#参考)
   * [反馈](#反馈)
 * [版本历史](#版本历史)
-  * [3.3 版中的修改](#3.3 版中的修改)
-  * [3.2 版中的修改](#3.2 版中的修改)
-  * [3.1 版中的修改](#3.1 版中的修改)
-  * [3 版中的修改](#3 版中的修改)
-  * [2 版中的修改](#2 版中的修改)
+  * [3.3 版中的修改](#3.3-版中的修改)
+  * [3.2 版中的修改](#3.2-版中的修改)
+  * [3.1 版中的修改](#3.1-版中的修改)
+  * [3 版中的修改](#3-版中的修改)
+  * [2 版中的修改](#2-版中的修改)
 
 ## 用例
 
@@ -984,9 +984,9 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
 
 通过这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)` 可以在协程中这样调用：`vx { async.foo(params, it) }`。
 
-### 构建 futures
+### 构建 Future
 
-定义在 [futures](#Futures) 用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何 future 或 promise 原语，这在[协程构建器](#协程构建器)做了一些介绍：
+定义在 [future](#Future) 用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何 future 或 promise 原语，这在[协程构建器](#协程构建器)做了一些介绍：
 
 ```kotlin
 fun <T> future(context: CoroutineContext = CommonPool, block: suspend () -> T): CompletableFuture<T> =
