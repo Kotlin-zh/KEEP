@@ -259,11 +259,21 @@ val seq = sequence {
 
 ### 异步用户界面
 
-典型的用户界面应用有一个事件调度线程，所有界面操作都发生在这个线程上。不允许在其他线程修改界面状态。所有用户界面库都提供某种原生方案，把操作挪到界面线程中执行。例如，Swing 的 [`SwingUtilities.invokeLater`](https://docs.oracle.com/javase/8/docs/api/javax/swing/SwingUtilities.html#invokeLater-java.lang.Runnable-)，JavaFX 的 [`Platform.runLater`](https://docs.oracle.com/javase/8/javafx/api/javafx/application/Platform.html#runLater-java.lang.Runnable-)，Android 的 [`Activity.runOnUiThread`](https://developer.android.com/reference/android/app/Activity.html#runOnUiThread(java.lang.Runnable)) 等等。这里有一段来自典型 Swing 应用的代码，执行一些异步操作，并把结果显示到用户界面：
+典型的有用户界面的应用程序只有一个事件调度线程，所有界面操作都发生在这个线程上。<!--
+-->通常不允许在其他线程修改界面状态。所有用户界面库都提供<!--
+-->某种原语，以将操作挪回界面线程中执行。例如，Swing 的 <!--
+-->[`SwingUtilities.invokeLater`](https://docs.oracle.com/javase/8/docs/api/javax/swing/SwingUtilities.html#invokeLater-java.lang.Runnable-)，<!--
+-->JavaFX 的 <!--
+-->[`Platform.runLater`](https://docs.oracle.com/javase/8/javafx/api/javafx/application/Platform.html#runLater-java.lang.Runnable-)，<!--
+-->Android 的 <!--
+-->[`Activity.runOnUiThread`](https://developer.android.com/reference/android/app/Activity.html#runOnUiThread(java.lang.Runnable)) <!--
+-->等等。<!--
+-->下面是一个典型的 Swing 应用程序的代码片段，它执行一些异步<!--
+-->操作，然后在用户界面中显示其结果:
 
 ```kotlin
 makeAsyncRequest {
-    // 异步操作完成时执行这个 lambda 表达式
+    // 异步请求完成时执行这个 lambda 表达式
     result, exception ->
     
     if (exception == null) {
@@ -277,7 +287,8 @@ makeAsyncRequest {
 }
 ```
 
-这很像我们之间在[异步计算](#异步计算)用例见过的回调地狱，所以也能通过协程优雅地解决：
+这很像我们之间在[异步计算](#异步计算)用例见过的回调地狱，<!--
+-->所以也能通过协程优雅地解决：
 
 ```kotlin
 launch(Swing) {
@@ -294,17 +305,18 @@ launch(Swing) {
 
 > `Swing` 上下文的示例代码在[续体拦截器](#续体拦截器)一节。
 
-所有的异常处理也都可以使用自然的语法结构执行。
+所有的异常处理也都可以使用原生的的语法结构执行。
 
 ### 其他用例
 
 协程可以覆盖更多用例，比如下面这些：
 
-* 基于通道的并发（就是 go 协程和通道）；
+* 基于通道的并发（就是 Go 协程和通道）；
 * 基于 Actor 模式的并发；
 * 偶尔需要用户交互的后台进程，例如显示模式对话框；
 * 通信协议：将每个参与者实现为一个序列，而不是状态机；
-* Web应用程序工作流：注册用户、验证电子邮件、登录它们（挂起的协程可以序列化并存储在数据库中）。
+* Web 应用程序工作流：注册用户、验证电子邮件、登录<!--
+-->（挂起的协程可以序列化并存储在数据库中）。
 
 ## 协程概述
 
