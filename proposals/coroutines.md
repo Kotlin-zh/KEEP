@@ -15,15 +15,15 @@
 
 设计目标：
 
-* 不依赖期货之类复杂的库提供的特定设施；
+* 不依赖 Futures 之类复杂的库提供的特定设施；
 * 涵盖 “async/await” 用例和 “生产者代码块”；
-* 使利用 Kotlin 协程作为各种现有异步 API（如Java NIO、各种期货的实现等）的包装成为可能；
+* 使利用 Kotlin 协程作为各种现有异步 API（如Java NIO、各种 Futures 的实现等）的包装成为可能；
 
 ## 目录
 
 * [用例](#用例)
   * [异步计算](#异步计算)
-  * [期货](#期货)
+  * [Futures](#Futures)
   * [生产者](#生产者)
   * [异步用户界面](#异步用户界面)
   * [其他用例](#其他用例)
@@ -45,7 +45,7 @@
   * [并发和线程](#并发和线程)
   * [异步编程风格](#异步编程风格)
   * [包装回调](#包装回调)
-  * [构建期货](#构建期货)
+  * [构建 futures](#构建 futures)
   * [非阻塞睡眠](#非阻塞睡眠)
   * [协作式单线程多任务](#协作式单线程多任务)
   * [异步序列](#异步序列)
@@ -137,14 +137,14 @@ launch {
 
 可想而知，在协程中处理异常也会稍微方便一些。
 
-### 期货
+### Futures
 
-还有另一种表达异步计算的方式：通过期货（或者叫做诺言、延时）。我们在示例中使用一个虚构的 API，对图像应用一个覆盖：
+还有另一种表达异步计算的方式：通过 futures（或者叫做 promises 或 deferreds）。我们在示例中使用一个虚构的 API，对图像应用一个覆盖：
 
 ```kotlin
 val future = runAfterBoth(
-    loadImageAsync("...original..."), // 创建期货
-    loadImageAsync("...overlay...")   // 创建期货
+    loadImageAsync("...original..."), // 创建一个 Future
+    loadImageAsync("...overlay...")   // 创建一个 Future
 ) {
     original, overlay ->
     ...
@@ -156,8 +156,8 @@ val future = runAfterBoth(
 
 ```kotlin
 val future = future {
-    val original = loadImageAsync("...original...") // 创建期货
-    val overlay = loadImageAsync("...overlay...")   // 创建期货
+    val original = loadImageAsync("...original...") // 创建一个 Future
+    val overlay = loadImageAsync("...overlay...")   // 创建一个 Future
     ...
     // 挂起等待图片加载
     // 图像和覆盖都加载完后执行 `applyOverlay(...)`
@@ -165,9 +165,9 @@ val future = future {
 }
 ```
 
-> 关于 `future{}` 的示例代码在[创建期货](#创建期货)一节，关于 `await()` 的示例代码在[挂起函数](#挂起函数)一节。
+> 关于 `future{}` 的示例代码在[创建 futures](#创建 futures)一节，关于 `await()` 的示例代码在[挂起函数](#挂起函数)一节。
 
-再一次，协程对期货的支持减少了缩进级别、逻辑（以及异常处理，这里没有出现）更加自然，而且没有使用专门的关键字（比如 C#、JS 以及其他语言中的 `async` 和 `await`）:`future{}` 和 `await()` 都只是库函数而已。
+再一次，协程对 future 的支持减少了缩进级别、逻辑（以及异常处理，这里没有出现）更加自然，而且没有使用专门的关键字（比如 C#、JS 以及其他语言中的 `async` 和 `await`）:`future{}` 和 `.await()` 都只是库函数而已。
 
 ### 生产者
 
@@ -277,7 +277,7 @@ launch(Swing) {
 
 ### 术语
 
-* *协程* —— *可挂起计算* 的*实例* 。它在概念上类似于一个线程，在这个意义上，它需要一个代码块运行，并具有类似的生命周期 —— 它可以被创建和启动，但它不绑定到任何特定的线程。它可以在一个线程中*挂起* 其执行， 并在另一个线程中*恢复* 。而且，像期货或诺言那样，它在*完成* 时可能伴随着结果（值或异常）。
+* *协程* —— *可挂起计算* 的*实例* 。它在概念上类似于一个线程，在这个意义上，它需要一个代码块运行，并具有类似的生命周期 —— 它可以被创建和启动，但它不绑定到任何特定的线程。它可以在一个线程中*挂起* 其执行， 并在另一个线程中*恢复* 。而且，像 future 或 promise 那样，它在*完成* 时可能伴随着结果（值或异常）。
 
 * *挂起函数* —— `suspend` 修饰符标记的函数。它可能会通过调用其他挂起函数*挂起* 执行代码，而不阻塞当前执行线程。一个挂起函数不能在常规代码中被调用，只能在其他挂起函数或挂起 lambda 表达式中（见下方）。举个例子，如用例所示的 `.await()` 和 `yield()` 是在库中定义的挂起函数。标准库提供了用于定义其他所有挂起函数所使用的基础挂起函数。
 
@@ -332,15 +332,15 @@ fun <T> Continuation<T>.resumeWithException(exception: Throwable)
 suspend fun <T> CompletableFuture<T>.await(): T =
     suspendCoroutine<T> { cont: Continuation<T> ->
         whenComplete { result, exception ->
-            if (exception == null) // 期货正常完成了
+            if (exception == null) // 这个 future 正常完成了
                 cont.resume(result)
-            else // 期货完成中产生了异常
+            else // 这个 future 因为异常而结束了
                 cont.resumeWithException(exception)
         }
     }
 ```
 
-> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/await.kt)找到代码。这个简单的实现只要期货不完成就会永远挂起协程。[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现还支持取消。
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/await.kt)找到代码。这个简单的实现只要 future 不完成就会永远挂起协程。[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现还支持取消。
 
 `suspend` 修饰符表明这个函数可以挂起协程的执行。这个特别的函数是作为类型 `CompletableFuture<T>` 的[扩展函数](https://kotlinlang.org/docs/reference/extensions.html)，以便其能正常地从左到右读，并且与实际执行顺序一致：
 
@@ -351,7 +351,6 @@ doSomethingAsync(...).await()
 `suspend` 修饰符可以用于任何函数：顶层函数、扩展函数、成员函数，或操作符函数。
 
 > 属性的取值器和设值器、构造器以及某些操作符函数（包括 `getValue`，`setValue`，`provideDelegate`，`get`，`set` 以及 `equals`）不能拥有 `suspend` 修饰符。这些限制将来可能会被消除。
->
 
 挂起函数可以调用任何常规函数，但要真正挂起执行，必须调用一些其他的挂起函数。特别的是，这个 `await` 实现调用了在标准库中定义的顶层挂起函数 `suspendCoroutine`（位于 `kotlinx.coroutines` 包）：
 
@@ -489,7 +488,7 @@ val facade = continuation.context[ContinuationInterceptor]?.interceptContinuatio
 ```
 协程框架为每个实际的续体实例实例缓存拦截过的续体，并且在不再需要时调用 `releaseInterceptedContinuation(intercepted)`。想了解更多细节请参阅[实现细节](#实现细节)部分。
 
-> 注意，像 `await` 这样的挂起函数实际上不一定会挂起协程的执行。比如[挂起函数](#挂起函数)一节所展现的 `await` 实现在期货已经完成的情况下就不会使协程真正挂起（在这种情况下 `resume` 会立刻被调用，协程的执行没有被挂起）。只有协程执行中真正被挂起时，续体才会被拦截，也就是调用 `resume` 之前 `suspendCoroutine` 函数就返回了的时候。
+> 注意，像 `await` 这样的挂起函数实际上不一定会挂起协程的执行。比如[挂起函数](#挂起函数)一节所展现的 `await` 实现在 future 已经完成的情况下就不会使协程真正挂起（在这种情况下 `resume` 会立刻被调用，协程的执行没有被挂起）。只有协程执行中真正被挂起时，续体才会被拦截，也就是调用 `resume` 之前 `suspendCoroutine` 函数就返回了的时候。
 
 让我们来看看 `Swing` 拦截器的具体示例代码，它将执行调度在 Swing 用户界面事件调度线程上。我们先来定义一个包装类 `SwingContinuation`，它调用 `SwingUtilities.invokeLater`，把续体调度到 Swing 事件调度线程：
 
@@ -826,7 +825,7 @@ fun sendEmail(emailArgs: EmailArgs): EmailResult
 fun sendEmail(emailArgs: EmailArgs, callback: (Throwable?, EmailResult?) -> Unit)
 ```
 
-但是，协程支持其他风格的异步非阻塞编程。其中之一是内置于许多流行语言中的 async/await 风格。在Kotlin中，可以通过引入 `future{}` 和 `.await()` 库函数来复制这种风格，就像[期货](#期货)用例一节所示。
+但是，协程支持其他风格的异步非阻塞编程。其中之一是内置于许多流行语言中的 async/await 风格。在Kotlin中，可以通过引入 `future{}` 和 `.await()` 库函数来复制这种风格，就像 [futures](#Futures) 用例一节所示。
 
 这种风格主张从函数返回对未来对象的某种约定，而不是传入回调函数作为参数。在这种异步风格中，`sendEmail` 的签名看起来是这样：
 
@@ -842,7 +841,7 @@ Kotlin 的*原生* 编程风格基于挂起函数。在这种风格下，`sendEm
 suspend fun sendEmail(emailArgs: EmailArgs): EmailResult
 ```
 
-我们已经发现，异步和挂起风格可以通过原语很容易地相互转换。例如，`sendEmailAsync` 可以用挂起版本的 `sendEmail` 和[期货构建器](#https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#building-futures)轻易地实现：
+我们已经发现，异步和挂起风格可以通过原语很容易地相互转换。例如，`sendEmailAsync` 可以用挂起版本的 `sendEmail` 和 [future 构建器](#https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#building-futures)轻易地实现：
 
 ```kotlin
 fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult> = future {
@@ -876,9 +875,9 @@ fun largerBusinessProcessAsync() = future {
 
 从这些风格在使用多个库的大型项目中的**比例**方面比较。挂起函数是 Kotlin 的一个轻量级语言概念。所有挂起函数在任何非限定性的 Kotlin  协程中都是完全可用的。异步风格的函数依赖于框架。每个 promises/futures 框架都必须定义自己的类 `async` 函数，该函数返回自己的 promise/future 类，这些类又有对应的类 `async` 函数。
 
-从**性能**方面比较。挂起函数提供最小的调用开销。你可以看[实现细节](#实现细节)一节。异步类型的函数对所有挂起机制需要额外持有相当重的诺言/期货抽象。异步样式的函数调用中必须返回一些期货的实例对象，并且即使函数非常简短，也无法将其优化掉。异步样式不太适合于非常细粒度的分解。
+从**性能**方面比较。挂起函数提供最小的调用开销。你可以看[实现细节](#实现细节)一节。异步类型的函数对所有挂起机制需要额外持有相当重的 promise/future 抽象。异步样式的函数调用中必须返回一些 future 的实例对象，并且即使函数非常简短，也无法将其优化掉。异步样式不太适合于非常细粒度的分解。
 
-从与 JVM/JS 代码的互操作性方面比较。使用对应类期货抽象的异步风格函数与 JVM/JS 代码更具互操作性。在 Java 或 JS 中，它们只是返回相应类期货对象的函数。对任何不原生支持[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。但是从上面的示例中可以看出，对于任何给定的诺言/期货框架都很容易将任何挂起函数转换为异步风格的函数。因此，您只需用 Kotlin 编写一次挂起函数，然后使用适当的 `future{}` 协程构建器函数，通过一行代码对其进行调整，以实现与任何形式的诺言/期货的互操作性。
+从与 JVM/JS 代码的**互操作性**方面比较。使用对应类 future 抽象的异步风格函数与 JVM/JS 代码更具互操作性。在 Java 或 JS 中，它们只是返回相应类 future 对象的函数。对任何不原生支持[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。但是从上面的示例中可以看出，对于任何给定的 promise/future 框架都很容易将任何挂起函数转换为异步风格的函数。因此，您只需用 Kotlin 编写一次挂起函数，然后使用适当的 `future{}` 协程构建器函数，通过一行代码对其进行调整，以实现与任何形式的 promise/future 的互操作性。
 
 ### 包装回调
 
@@ -938,11 +937,9 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
 
 通过这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)` 可以在协程中这样调用：`vx { async.foo(params, it) }`。
 
-### 构建期货
+### 构建 futures
 
-定义在[期货](#期货)用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何期货或诺言原语，这在
-
-[协程构建器](#协程构建器)做了一些介绍：
+定义在 [futures](#Futures) 用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何 future 或 promise 原语，这在[协程构建器](#协程构建器)做了一些介绍：
 
 ```kotlin
 fun <T> future(context: CoroutineContext = CommonPool, block: suspend () -> T): CompletableFuture<T> =
@@ -963,7 +960,7 @@ class CompletableFutureCoroutine<T>(override val context: CoroutineContext) : Co
 
 > 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/future.kt)获取代码。[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中实际的实现更高级，因为它要传播对等待结果的期货的取消，以终止协程。
 
-协程完成时调用对应期货的 `complete` 方法向协程报告结果。
+协程完成时调用对应 future 的 `complete` 方法向协程报告结果。
 
 ### 非阻塞睡眠
 
@@ -1000,7 +997,7 @@ suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
 
 [协程拦截器](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#coroutine-interceptor)提供了一个简单的工具保证所有协程限制在同一线程上。[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext.kt)的示例代码定义了 `newSingleThreadContext()` 函数，它能创建一个单线程执行的服务并使其适应协程拦截器的需求。
 
-在下面这个单线程的示例中，我们把它和[构造期货](#构造期货)一节中的 `future{}` 协程构建器一起使用，尽管它有两个同时处于活动状态的异步任务。
+在下面这个单线程的示例中，我们把它和[构造 futures](#构造 futures)一节中的 `future{}` 协程构建器一起使用，尽管它有两个同时处于活动状态的异步任务。
 
 ```kotlin
 fun main(args: Array<String>) {
@@ -1270,8 +1267,6 @@ class SafeCounter {
 
 | 原文                       | 译文         |
 | -------------------------- | ------------ |
-| future                     | 期货         |
-| promise                    | 诺言         |
 | continuation               | 续体         |
 | continuation passing style | 续体传递风格 |
 | coroutine intrinsics       | 协程内建函数 |
