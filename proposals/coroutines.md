@@ -438,37 +438,65 @@ suspend fun <T> CompletableFuture<T>.await(): T =
         whenComplete { result, exception ->
             if (exception == null) // 这个 future 正常完结了
                 cont.resume(result)
-            else // 这个 future 因为异常而结束了
+            else // 这个 future 因为异常而完结了
                 cont.resumeWithException(exception)
         }
     }
 ```
 
-> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/await.kt)找到代码。这个简单的实现只要 future 不完结就会永远挂起协程。[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现还支持取消。
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/await.kt)找到代码。<!--
+-->注意：这个简单的实现只要 future 不完结就会永远挂起协程。<!--
+-->[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现<!--
+-->还支持取消。
 
-`suspend` 修饰符表明这个函数可以挂起协程的执行。这个特别的函数是作为类型 `CompletableFuture<T>` 的[扩展函数](https://kotlinlang.org/docs/reference/extensions.html)，以便其能正常地从左到右读，并且与实际执行顺序一致：
+`suspend` 修饰符表明这个函数可以挂起协程的执行。<!--
+-->这个特殊的函数被定义为类型 `CompletableFuture<T>` 的<!--
+-->[扩展函数](https://kotlinlang.org/docs/reference/extensions.html)，<!--
+-->以便使用它时能自然按照<!--
+-->与实际执行顺序相对应的从左到右的顺序读取:
 
 ```kotlin
 doSomethingAsync(...).await()
 ```
 
-`suspend` 修饰符可以用于任何函数：顶层函数、扩展函数、成员函数，或操作符函数。
+`suspend` 修饰符可以用于任何函数：顶层函数、扩展函数、成员函数、<!--
+-->局部函数或操作符函数。
 
-> 属性的取值器和设值器、构造器以及某些操作符函数（包括 `getValue`，`setValue`，`provideDelegate`，`get`，`set` 以及 `equals`）不能拥有 `suspend` 修饰符。这些限制将来可能会被消除。
+> 属性的取值器和设值器、构造器以及某些操作符函数<!--
+-->（也就是 `getValue`，`setValue`，`provideDelegate`，`get`，`set` 以及 `equals`）不能带有 `suspend` 修饰符。<!--
+-->这些限制将来可能会被消除。
 
-挂起函数可以调用任何常规函数，但要真正挂起执行，必须调用一些其他的挂起函数。特别的是，这个 `await` 实现调用了在标准库中定义的顶层挂起函数 `suspendCoroutine`（位于 `kotlinx.coroutines` 包）：
+挂起函数可以调用任何常规函数，但要真正挂起执行，必须<!--
+-->调用一些其他的挂起函数。特别是，这个 `await` 实现调用了<!--
+-->在标准库中定义的顶层挂起函数 <!--
+-->[`suspendCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/suspend-coroutine.html)<!--
+-->（位于 `kotlinx.coroutines` 包）：
 
 ```kotlin
 suspend fun <T> suspendCoroutine(block: (Continuation<T>) -> Unit): T
 ```
 
-当  `suspendCoroutine` 在一个协程中被调用时（它只可能在协程中被调用，因为它是一个挂起函数），它捕获了协程的执行状态到一个*续体* 实例，然后将其传给指定的 `block` 作为参数。为了恢复协程的执行，代码块之后需要调用 `continuation.resumeWith()`（直接调用或通过 `continuation.resume()` 或 `continuation.resumeWithException()` 调用）在该线程或其他线程中。*实际* 的协程挂起发生当 `suspendCoroutine` 代码块没有调用 `resumeWith` 就返回时。如果协程在代码块中直接被恢复，协程就不被看作已经暂停又继续执行。
+当  `suspendCoroutine` 在一个协程中被调用时（它*只* 可能在协程中<!--
+-->被调用，因为它是一个挂起函数），它捕获了协程的执行状态<!--
+-->到一个*续体* 实例，然后将其传给指定的 `block` 作为参数。<!--
+-->为了恢复协程的执行，代码块需要在该线程或稍后在其他某个线程中调用 `continuation.resumeWith()`<!--
+-->（直接调用或通过 `continuation.resume()` 或 `continuation.resumeWithException()` 调用）。<!--
+--><!--
+-->*实际* 的协程挂起发生在当 `suspendCoroutine` 代码块没有调用 `resumeWith` 就返回时。<!--
+-->如果协程还未从代码块返回就直接被恢复，<!--
+-->协程就不被看作已经暂停又继续执行。
 
-传给 `continuation.resumeWith()` 的值作为调用 `suspendCoroutine` 的结果，进一步成为 `.await()` 的结果。
+传给 `continuation.resumeWith()` 的值作为调用 `suspendCoroutine` 的结果，<!--
+-->进一步成为 `.await()` 的结果。
 
-多次恢复同一个协程是不被允许的，并会产生  `IllegalStateException`。 
+不允许多次恢复同一个协程，并会产生 `IllegalStateException`。 
 
-> 注意：这正是 Kotlin 协程与像 Scheme 这样的函数式语言中的顶层限定续体以及 Haskell 中的续体函子的关键区别。我们选择仅支持续体恢复一次，完全是出于实用主义考虑，因为所有这些预期的[用例](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#use-cases)都不需要多重续体。然而，还是可以在另外的库中实现多重续体，通过所谓协程内建函数，就是复制续体中捕获的协程状态，然后就可以再次恢复这个副本协程。
+> 注意：这正是 Kotlin 协程与像 Scheme 这样的函数式语言中的顶层限定续体<!--
+-->或 Haskell 中的续体单子的关键区别。我们选择仅支持续体恢复一次，<!--
+-->完全是出于实用主义考虑，因为所有这些预期的[用例](#用例)都不需要多重续体。<!--
+-->然而，还是可以在另外的库中实现多重续体，<!--
+-->通过底层的所谓[协程内建函数](#协程内建函数)复制续体中<!--
+-->捕获的协程状态，然后就可以从这个副本再次恢复协程。
 
 ### 协程构建器
 
