@@ -500,7 +500,9 @@ suspend fun <T> suspendCoroutine(block: (Continuation<T>) -> Unit): T
 
 ### 协程构建器
 
-挂起函数不能够从常规函数中调用，所以标准库提供了用于在常规非挂起作用域中开启协程的函数。这是简单的*协程构建器* `launch` 的实现：
+挂起函数不能够从常规函数中调用，所以标准库提供了<!--
+-->用于在常规非挂起作用域中启动协程执行的函数。这是<!--
+-->简化的*协程构建器* `launch` 的实现：
 
 ```kotlin
 fun launch(context: CoroutineContext = EmptyCoroutineContext, block: suspend () -> Unit) =
@@ -514,22 +516,40 @@ fun launch(context: CoroutineContext = EmptyCoroutineContext, block: suspend () 
 
 > 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/run/launch.kt)获取代码。
 
-这个实现使用了 [`Continuation(context) { ... }`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation.html) 函数（来自 `kotlin.coroutines` 包），它提供了一个简写以实现包含其给定的 `context` 值和 `resumeWith` 函数所需的代码块的 `Continuation` 接口。这个续体作为*完结续体* 被传给 [`block.startCoroutine(...)`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/start-coroutine.html) 扩展函数（来自 `kotlin.coroutines` 包）。
+这个实现使用了 [`Continuation(context) { ... }`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation.html) <!--
+-->函数（来自 `kotlin.coroutines` 包），它提供了一种<!--
+-->简写以实现包含其给定的 `context` 值和 `resumeWith` 函数体的<!--
+--> `Continuation` 接口。这个续体作为*完结续体* 被传给 <!--
+-->[`block.startCoroutine(...)`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/start-coroutine.html) 扩展函数<!--
+-->（来自 `kotlin.coroutines` 包）。
 
-协程在完结中将调用其 *完结续体*。其 `resumeWith` 函数将在协程因成功或失败达到*完结* 状态时调用。因为 `launch` 是那种“即发即弃”式的协程，它被定义成返回 `Unit` 的挂起函数，实际上是无视了其 `resume` 函数的结果。如果协程异常结束，当前线程的未捕获异常句柄将用于报告这个异常。
+协程在完结时将调用其*完结续体*。其 `resumeWith` <!--
+-->函数将在协程因成功或失败而*完结* 时调用。<!--
+-->因为 `launch` 是那种“即发即弃”式的<!--
+-->协程，它被定义成返回 `Unit` 的挂起函数，实际上是无视了<!--
+-->其 `resume` 函数的结果。如果协程因异常完结，<!--
+-->当前线程的未捕获异常句柄将用于报告这个异常。
 
-> 注意：这个简单实现返回了 `Unit` ，没有提供任何协程状态的访问。实际上在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实现要更加复杂，因为它返回了一个 `Job` 实例，代表这个协程并且可以被取消。
+> 注意：这个简单实现返回了 `Unit` ，根本不提供对协程状态的任何访问。<!--
+-->实际上在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实现要更加<!--
+-->复杂，因为它返回了一个 `Job` 接口的实例，代表这个协程，而且可以被取消。
 
-context 在[协程上下文](#协程上下文)一节中详细介绍。`startCoroutine` 在标准库中作为无参和单参数的挂起函数类型的扩展函数：
+上下文在[协程上下文](#协程上下文)一节中详细介绍。<!--
+-->`startCoroutine` 在标准库中是无参和<!--
+-->单参数的挂起函数类型的扩展函数：
 
 ```kotlin
 fun <T> (suspend  () -> T).startCoroutine(completion: Continuation<T>)
 fun <R, T> (suspend  R.() -> T).startCoroutine(receiver: R, completion: Continuation<T>)
 ```
 
-`startCoroutine` 创建协程并在当前线程中立刻启动执行（但请参阅下面的备注），直到第一个挂起点时返回。挂起点是协程中某个挂起函数的调用，由相应的挂起函数的代码来定义协程恢复的时间和方式。
+`startCoroutine` 创建协程并在当前线程中立刻启动执行（但请参阅下面的备注），<!--
+-->直到第一个*挂起点* 时返回。<!--
+-->挂起点是协程中某个[挂起函数](#挂起函数)的调用，<!--
+-->由相应的挂起函数的代码来定义协程恢复的时机和方式。
 
-> 注意：续体拦截器（来自上下文）在[后文](#续体拦截器)中会提到，它能够将协程的执行，*包括* 它的初始续体调度到另一个线程中。
+> 注意：续体拦截器（来自上下文）在[后文](#续体拦截器)中会提到，它能够<!--
+-->将协程的执行，*包括* 其初始续体的执行，调度到另一个线程中。
 
 ### 协程上下文
 
