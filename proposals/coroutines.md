@@ -1,4 +1,4 @@
-# 协程
+# Kotlin 协程
 
 * **类型**：设计提案
 * **作者**：Andrey Breslav, Roman Elizarov
@@ -17,13 +17,13 @@
 
 * 不依赖期货之类复杂的库提供的特定设施；
 * 涵盖 “async/await” 用例和 “生产者代码块”；
-* 可以同 Kotlin 协程实现现有的各种异步API（如 JAVA NIO、各种期货实现等）；
+* 使利用 Kotlin 协程作为各种现有异步 API（如Java NIO、各种期货的实现等）的包装成为可能；
 
 ## 目录
 
 * [用例](#用例)
   * [异步计算](#异步计算)
-  * [特性](#特性)
+  * [期货](#期货)
   * [生产者](#生产者)
   * [异步用户界面](#异步用户界面)
   * [其他用例](#其他用例)
@@ -31,7 +31,7 @@
   * [术语](#术语)
   * [续体接口](#续体接口)
   * [挂起函数](#挂起函数)
-  * [协程建造者](#协程建造者)
+  * [协程构建器](#协程构建器)
   * [协程上下文](#协程上下文)
   * [续体拦截器](#续体拦截器)
   * [受限挂起](#受限挂起)
@@ -45,7 +45,7 @@
   * [并发和线程](#并发和线程)
   * [异步编程风格](#异步编程风格)
   * [包装回调](#包装回调)
-  * [构造期货](#构造期货)
+  * [构建期货](#构建期货)
   * [非阻塞睡眠](#非阻塞睡眠)
   * [协作式单线程多任务](#协作式单线程多任务)
   * [异步序列](#异步序列)
@@ -54,8 +54,13 @@
   * [从实验性协程移植](#从实验性协程移植)
   * [参考](#参考)
   * [反馈](#反馈)
-
-
+* [版本历史](#版本历史)
+  * [3.3 版中的修改](#3.3 版中的修改)
+  * [3.2 版中的修改](#3.2 版中的修改)
+  * [3.1 版中的修改](#3.1 版中的修改)
+  * [3 版中的修改](#3 版中的修改)
+  * [2 版中的修改](#2 版中的修改)
+* [名词对照](#名词对照)
 
 ## 用例
 
@@ -107,9 +112,9 @@ launch {
 
 `aRead()` 和 `aWrite()` 是特别的*挂起函数* —— 它们可以*挂起* 代码执行（这并不意味着阻塞运行他们的线程），然后在调用完成时*恢复*  代码执行。如果我们眯着眼睛去想象所有在 `aRead()` 之后的代码已经被包装成一个 lambda 表达式传给 `aRead()` 作为回调，再对 `aWrite()` 做同样的事情，我们就可以看到和上面相同的代码，只是可读性增加了。
 
-以一种非常通用的方式支持协程是我们的明确目标，所以在这个例子中，`launch{}`、`.aRead()` 和 `.aWrite()` 只是适应协程工作的库函数；`launch` 是*协程建造者* —— 它创建并启动协程；`aRead()` 和 `aWrite()` 作为特别的*挂起函数* 隐式地接受*续体*（[*续体*](https://aisia.moe/2018/02/08/kotlin-coroutine-kepa/) 就是一般的回调）。
+以一种非常通用的方式支持协程是我们的明确目标，所以在这个例子中，`launch{}`、`.aRead()` 和 `.aWrite()` 只是适应协程工作的库函数；`launch` 是*协程构建器* —— 它创建并启动协程；`aRead()` 和 `aWrite()` 作为特别的*挂起函数* 隐式地接受*续体*（[*续体*](https://aisia.moe/2018/02/08/kotlin-coroutine-kepa/) 就是一般的回调）。
 
-> 关于 `launch{}` 的示例代码在[协程建造者](#协程建造者)一节，关于 `aRead()` 的示例代码在[包装性回调](#包装性回调)一节。
+> 关于 `launch{}` 的示例代码在[协程构建器](#协程构建器)一节，关于 `aRead()` 的示例代码在[包装性回调](#包装性回调)一节。
 
 注意，显式传入的回调要在循环中异步调用通常非常棘手，但在协程中这不过是稀松平常的小事：
 
@@ -132,7 +137,7 @@ launch {
 
 可想而知，在协程中处理异常也会稍微方便一些。
 
-### 特性
+### 期货
 
 还有另一种表达异步计算的方式：通过期货（或者叫做诺言、延时）。我们在示例中使用一个虚构的 API，对图像应用一个覆盖：
 
@@ -162,7 +167,7 @@ val future = future {
 
 > 关于 `future{}` 的示例代码在[创建期货](#创建期货)一节，关于 `await()` 的示例代码在[挂起函数](#挂起函数)一节。
 
-再一次地，协程对期货的支持减少了缩进级别、逻辑（以及异常处理，这里没有出现）更加自然，而且没有使用专门的关键字（比如 C#、JS 以及其他语言中的 `async` 和 `await`）:`future{}` 和 `await()` 都只是库函数而已。
+再一次，协程对期货的支持减少了缩进级别、逻辑（以及异常处理，这里没有出现）更加自然，而且没有使用专门的关键字（比如 C#、JS 以及其他语言中的 `async` 和 `await`）:`future{}` 和 `await()` 都只是库函数而已。
 
 ### 生产者
 
@@ -282,7 +287,7 @@ launch(Swing) {
 
 * *挂起函数类型*  —— 挂起函数和挂起 lambda 表达式的函数类型。它就像一个常规的函数类型，但具有 `suspend` 修饰符。举个例子，`suspend () -> Int ` 是一个没有参数、返回 `Int` 的挂起函数的函数类型。一个像这样声明 —— `suspend fun foo(): Int` 的挂起函数符合上述函数类型。
 
-* *协程建造者* —— 使用一些挂起 lambda 表达式作为参数，创建一个协程，可选地提供某种形式的对其结果的访问的函数。举个例子，用例中的 `launch{}`, `future{}`, 和 `sequence{}` 是库中定义的协程建造者。 标准库提供了用于定义其他所有协程建造者所使用的基础协程建造者。
+* *协程构建器* —— 使用一些挂起 lambda 表达式作为参数，创建一个协程，可选地提供某种形式的对其结果的访问的函数。举个例子，用例中的 `launch{}`, `future{}`, 和 `sequence{}` 是库中定义的协程构建器。 标准库提供了用于定义其他所有协程构建器所使用的基础协程构建器。
 
 * *挂起点* —— 协程执行过程中可能会被*挂起* 的位置。从语法上说，一个挂起点是对一个挂起函数的调用，但*实际* 的挂起在挂起函数调用了标准库中的原始挂起函数时发生。
 
@@ -362,9 +367,9 @@ suspend fun <T> suspendCoroutine(block: (Continuation<T>) -> Unit): T
 
 > 注意：这正是 Kotlin 协程与像 Scheme 这样的函数式语言中的顶层限定续体以及 Haskell 中的续体函子的关键区别。我们选择仅支持续体恢复一次，完全是出于实用主义考虑，因为所有这些预期的[用例](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#use-cases)都不需要多重续体。然而，还是可以在另外的库中实现多重续体，通过所谓协程内建函数，就是复制续体中捕获的协程状态，然后就可以再次恢复这个副本协程。
 
-### 协程建造者
+### 协程构建器
 
-挂起函数不能够从常规函数中调用，所以标准库提供了用于在常规非挂起范围中开启协程的函数。这是简单的*协程建造者* `launch` 的实现：
+挂起函数不能够从常规函数中调用，所以标准库提供了用于在常规非挂起作用域中开启协程的函数。这是简单的*协程构建器* `launch` 的实现：
 
 ```kotlin
 fun launch(context: CoroutineContext = EmptyCoroutineContext, block: suspend () -> Unit) =
@@ -425,7 +430,7 @@ interface CoroutineContext {
 * 操作符 `plus` 类似于标准库的 [`Set.plus`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/plus.html) 扩展函数，返回两个上下文的组合, 同时加号右边的元素会替换掉加号左边具有相同键的元素。
 * 函数 `minueKey` 返回不包含指定键的上下文。
 
-协程上下文的一个 [`Element`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/-element/index.html) 就是上下文本身。那是仅有这一个元素的独立上下文结构。这样就可以通过获取库定义的协程上下文元素并使用 `+` 连接它们，来创建一个复合上下文。举个例子，如果一个库定义的 `auth` 元素带着用户授权信息，其他库定义的 `threadPool` 对象带着一些协程执行信息，你就可以使用[协程建造者]() `launch{}` 建造使用组合上下文的 `launch(auth + CommonPool){...}` 调用。
+协程上下文的一个 [`Element`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/-element/index.html) 就是上下文本身。那是仅有这一个元素的独立上下文结构。这样就可以通过获取库定义的协程上下文元素并使用 `+` 连接它们，来创建一个复合上下文。举个例子，如果一个库定义的 `auth` 元素带着用户授权信息，其他库定义的 `threadPool` 对象带着一些协程执行信息，你就可以使用[协程构建器]() `launch{}` 建造使用组合上下文的 `launch(auth + CommonPool){...}` 调用。
 
 > 注意： [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 提供了几个上下文元素，包括用于在一个共享后台线程池中调度协程的 `Dispatchers.Default`。
 
@@ -454,7 +459,7 @@ suspend fun doSomething() {
 
 ### 续体拦截器
 
-让我们回想一下[异步用户界面](#异步用户界面)用例。异步界面应用程序必须保证协程程序体始终在界面线程中执行，尽管事实上各种挂起函数是在任意的线程中恢复协程执行。这是使用*续体拦截器* 完成的。首先，我们要充分了解协程的生命周期。思考一下用了协程建造者 `launch{}` 的代码片段：
+让我们回想一下[异步用户界面](#异步用户界面)用例。异步界面应用程序必须保证协程程序体始终在界面线程中执行，尽管事实上各种挂起函数是在任意的线程中恢复协程执行。这是使用*续体拦截器* 完成的。首先，我们要充分了解协程的生命周期。思考一下用了协程构建器 `launch{}` 的代码片段：
 
 ```kotlin
 launch(CommonPool) {
@@ -509,7 +514,7 @@ object Swing : AbstractCoroutineContextElement(ContinuationInterceptor), Continu
 > 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/swing.kt)获得这部分代码。注意：`Swing` 对象在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现还支持了协程调试功能，提供及显示用运行协程的线程表示的当前协程的标识符。
 >
 
-现在，可以用带有 `Swing` 参数的[协程建造者](#协程建造者) `launch{}` 来执行完全运行在 Swing 事件调度线程中的协程：
+现在，可以用带有 `Swing` 参数的[协程构建器](#协程构建器) `launch{}` 来执行完全运行在 Swing 事件调度线程中的协程：
 
 ```kotlin
 launch(Swing) {
@@ -521,7 +526,7 @@ launch(Swing) {
 
 ### 限定挂起
 
-为例实现[生产者](#生产者)用例中的 `sequence{}` 和 `yield()`，需要另一类协程建造者和挂起函数。这是协程建造者 `sequence{}` 的示例代码：
+为例实现[生产者](#生产者)用例中的 `sequence{}` 和 `yield()`，需要另一类协程构建器和挂起函数。这是协程构建器 `sequence{}` 的示例代码：
 
 ```kotlin
 fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
@@ -531,14 +536,14 @@ fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequ
 }
 ```
 
-它使用了标准库中类似于 `startCoroutine`（解释见[协程建造者](#协程建造者)一节）的另一个原语 [`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。不同点在于它*创建* 一个协程，但并*不* 启动协程，而是返回表示协程的*初始续体* 的 `Continuation<Unit>` 引用：
+它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)一节）的另一个原语 [`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。不同点在于它*创建* 一个协程，但并*不* 启动协程，而是返回表示协程的*初始续体* 的 `Continuation<Unit>` 引用：
 
 ```kotlin
 fun <T> (suspend () -> T).createCoroutine(completion: Continuation<T>): Continuation<Unit>
 fun <R, T> (suspend R.() -> T).createCoroutine(receiver: R, completion: Continuation<T>): Continuation<Unit>
 ```
 
-另一个不同点是传递给建造者的*挂起 lambda 表达式* `block` 是具有 `SequenceScope<T>` 接收者的[扩展 lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。`SequenceScope<T>` 接口提供了生产者代码块的作用域，其在库中定义如下：
+另一个不同点是传递给构建器的*挂起 lambda 表达式* `block` 是具有 `SequenceScope<T>` 接收者的[扩展 lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。`SequenceScope<T>` 接口提供了生产者代码块的作用域，其在库中定义如下：
 
 ```kotlin
 interface SequenceScope<in T> {
@@ -586,11 +591,11 @@ interface SequenceScope<in T> {
 }
 ```
 
-这个注解对能用在 `sequence{}` 域或其他类似的同步协程建造者中的挂起函数有一定的限制。那些扩展*限定性挂起域* 类或接口（以 `@RestrictsSuspension` 标记）的挂起 lambda 表达式或函数称作*限定性挂起函数*。限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
+这个注解对能用在 `sequence{}` 域或其他类似的同步协程构建器中的挂起函数有一定的限制。那些扩展*限定性挂起域* 类或接口（以 `@RestrictsSuspension` 标记）的挂起 lambda 表达式或函数称作*限定性挂起函数*。限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
 
-回到这个例子，这意味着 `SequenceScope` 范围内 lambda 表达式的扩展不能调用 `suspendContinuation` 或其他通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 `SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` 实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 lambda 表达式和函数是限定的）。
+回到这个例子，这意味着 `SequenceScope` 作用域内 lambda 表达式的扩展不能调用 `suspendContinuation` 或其他通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 `SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` 实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 lambda 表达式和函数是限定的）。
 
-对于像 `sequence` 这样的限定性协程建造者，支持任意上下文是没有意义的，因为其作用类或接口（比如这个例子里的 `SequenceScope`）已经占用了上下文能提供的服务，因此限定性协程只能使用 `EmptyCoroutineContext` 作为上下文，`SequenceCouroutine` 的取值器实现也会返回这个。尝试创建上下文不是 `EmptyCoroutineSContext` 的限定性协程会引发 `IllegalArgumentException`。
+对于像 `sequence` 这样的限定性协程构建器，支持任意上下文是没有意义的，因为其作用类或接口（比如这个例子里的 `SequenceScope`）已经占用了上下文能提供的服务，因此限定性协程只能使用 `EmptyCoroutineContext` 作为上下文，`SequenceCouroutine` 的取值器实现也会返回这个。尝试创建上下文不是 `EmptyCoroutineSContext` 的限定性协程会引发 `IllegalArgumentException`。
 
 ## 实现细节
 
@@ -797,7 +802,7 @@ launch { // 启动协程
 }
 ```
 
-在协程的作用域里，你可以随意使用那些普通的非线程安全可变的结构。然而，在协程*之间* 共享可变状态仍可能带来致命威胁。如果你使用了一个指定调度器的协程建造者，在单一事件调度线程上恢复协程，就像[协程拦截器](#协程拦截器)一节展示的 `Swing` 拦截器那样，那你仍能安全地操作所有共享对象，因为它们总在事件调度线程上修改。但如果你在多线程环境中或者需要在运行在不同线程上的多个协程之间共享可变状态，你就必须使用线程安全的（并发的）数据结构。
+在协程的作用域里，你可以随意使用那些普通的非线程安全可变的结构。然而，在协程*之间* 共享可变状态仍可能带来致命威胁。如果你使用了一个指定调度器的协程构建器，在单一事件调度线程上恢复协程，就像[协程拦截器](#协程拦截器)一节展示的 `Swing` 拦截器那样，那你仍能安全地操作所有共享对象，因为它们总在事件调度线程上修改。但如果你在多线程环境中或者需要在运行在不同线程上的多个协程之间共享可变状态，你就必须使用线程安全的（并发的）数据结构。
 
 协程在这方面和线程没有什么不同，尽管协程确实更轻。你可以在仅仅几个线程上同时运行几百万个协程。一个运行着的协程总是在某个线程上。但一个*挂起* 了的协程并不占用线程，也没有以任何方式绑定到线程。恢复协程的挂起函数通过在线程上调用 `Continuation.resumeWith` 决定在哪个线程上恢复协程。而协程拦截器可以覆盖这个决定，并将协程的执行分派到不同的线程上。
 
@@ -837,7 +842,7 @@ Kotlin 的*原生* 编程风格基于挂起函数。在这种风格下，`sendEm
 suspend fun sendEmail(emailArgs: EmailArgs): EmailResult
 ```
 
-我们已经发现，异步和挂起风格可以通过原语很容易地相互转换。例如，`sendEmailAsync` 可以用挂起版本的 `sendEmail` 和[期货建造者](#https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#building-futures)轻易地实现：
+我们已经发现，异步和挂起风格可以通过原语很容易地相互转换。例如，`sendEmailAsync` 可以用挂起版本的 `sendEmail` 和[期货构建器](#https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#building-futures)轻易地实现：
 
 ```kotlin
 fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult> = future {
@@ -867,13 +872,13 @@ fun largerBusinessProcessAsync() = future {
 }
 ```
 
-注意，异步风格的函数调用写法更冗长，更容易出错。如果在异步风格的示例中省略了 `.await()` 调用，代码仍然可以编译并工作，但现在它将异步发送电子邮件，甚至在执行较大业务流程的其余部分的同时发送电子邮件，因此可能会修改某些共享状态并引入一些非常难以重现的错误。相反，挂起函数默认是顺序的。对于挂起的函数，无论何时需要任何并发，都可以在代码中通过调用某种 `future{}` 或类似的协程建造者显式地表达。
+注意，异步风格的函数调用写法更冗长，更容易出错。如果在异步风格的示例中省略了 `.await()` 调用，代码仍然可以编译并工作，但现在它将异步发送电子邮件，甚至在执行较大业务流程的其余部分的同时发送电子邮件，因此可能会修改某些共享状态并引入一些非常难以重现的错误。相反，挂起函数默认是顺序的。对于挂起的函数，无论何时需要任何并发，都可以在代码中通过调用某种 `future{}` 或类似的协程构建器显式地表达。
 
 从这些风格在使用多个库的大型项目中的**比例**方面比较。挂起函数是 Kotlin 的一个轻量级语言概念。所有挂起函数在任何非限定性的 Kotlin  协程中都是完全可用的。异步风格的函数依赖于框架。每个 promises/futures 框架都必须定义自己的类 `async` 函数，该函数返回自己的 promise/future 类，这些类又有对应的类 `async` 函数。
 
 从**性能**方面比较。挂起函数提供最小的调用开销。你可以看[实现细节](#实现细节)一节。异步类型的函数对所有挂起机制需要额外持有相当重的诺言/期货抽象。异步样式的函数调用中必须返回一些期货的实例对象，并且即使函数非常简短，也无法将其优化掉。异步样式不太适合于非常细粒度的分解。
 
-从与 JVM/JS 代码的互操作性方面比较。使用对应类期货抽象的异步风格函数与 JVM/JS 代码更具互操作性。在 Java 或 JS 中，它们只是返回相应类期货对象的函数。对任何不原生支持[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。但是从上面的示例中可以看出，对于任何给定的诺言/期货框架都很容易将任何挂起函数转换为异步风格的函数。因此，您只需用 Kotlin 编写一次挂起函数，然后使用适当的 `future{}` 协程建造者函数，通过一行代码对其进行调整，以实现与任何形式的诺言/期货的互操作性。
+从与 JVM/JS 代码的互操作性方面比较。使用对应类期货抽象的异步风格函数与 JVM/JS 代码更具互操作性。在 Java 或 JS 中，它们只是返回相应类期货对象的函数。对任何不原生支持[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。但是从上面的示例中可以看出，对于任何给定的诺言/期货框架都很容易将任何挂起函数转换为异步风格的函数。因此，您只需用 Kotlin 编写一次挂起函数，然后使用适当的 `future{}` 协程构建器函数，通过一行代码对其进行调整，以实现与任何形式的诺言/期货的互操作性。
 
 ### 包装回调
 
@@ -933,11 +938,11 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
 
 通过这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)` 可以在协程中这样调用：`vx { async.foo(params, it) }`。
 
-### 构造期货
+### 构建期货
 
-定义在[期货](#期货)用例中类似于 `launch{}` 建造者的 `future{}` 建造者可以用于实现任何期货或诺言原语，这在
+定义在[期货](#期货)用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何期货或诺言原语，这在
 
-[协程建造者](#协程建造者)做了一些介绍：
+[协程构建器](#协程构建器)做了一些介绍：
 
 ```kotlin
 fun <T> future(context: CoroutineContext = CommonPool, block: suspend () -> T): CompletableFuture<T> =
@@ -995,7 +1000,7 @@ suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
 
 [协程拦截器](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#coroutine-interceptor)提供了一个简单的工具保证所有协程限制在同一线程上。[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext.kt)的示例代码定义了 `newSingleThreadContext()` 函数，它能创建一个单线程执行的服务并使其适应协程拦截器的需求。
 
-在下面这个单线程的示例中，我们把它和[构造期货](#构造期货)一节中的 `future{}` 协程建造者一起使用，尽管它有两个同时处于活动状态的异步任务。
+在下面这个单线程的示例中，我们把它和[构造期货](#构造期货)一节中的 `future{}` 协程构建器一起使用，尽管它有两个同时处于活动状态的异步任务。
 
 ```kotlin
 fun main(args: Array<String>) {
@@ -1026,13 +1031,13 @@ fun main(args: Array<String>) {
 
 > 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext-example.kt)获取完整示例。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)  有 `newSingleThreadContext` 开箱即用的实现。
 
-如果你的整个应用都在同一个线程上执行，你可以定义自己的辅助协程建造者，在其中硬编码一个适应你单线程执行机制的上下文。
+如果你的整个应用都在同一个线程上执行，你可以定义自己的辅助协程构建器，在其中硬编码一个适应你单线程执行机制的上下文。
 
 ### 异步序列
 
-[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程建造者是一个*同步* 协程的示例。当消费者调用 `Iterator.next()` 时，协程的生产代码同步执行在同一个线程上。`sequence{}` 协程块是受限的，没法用第三方挂起函数挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件输入输出。
+[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程构建器是一个*同步* 协程的示例。当消费者调用 `Iterator.next()` 时，协程的生产代码同步执行在同一个线程上。`sequence{}` 协程块是受限的，没法用第三方挂起函数挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件输入输出。
 
-*异步的* 序列建造者支持随意挂起和恢复执行。这意味着其消费者要时刻准备着处理数据还没生产出来的情况。这是挂起函数的原生用例。我们来定义一个类似于普通 [`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/) 接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
+*异步的* 序列构建器支持随意挂起和恢复执行。这意味着其消费者要时刻准备着处理数据还没生产出来的情况。这是挂起函数的原生用例。我们来定义一个类似于普通 [`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/) 接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
 
 ```kotlin
 interface SuspendingIterator<out T> {
@@ -1057,7 +1062,7 @@ interface SuspendingSequenceScope<in T> {
 }
 ```
 
-建造者函数 `suspendingSequence{}` 的用法和同步的 `sequence{}` 一样。
+构建器函数 `suspendingSequence{}` 的用法和同步的 `sequence{}` 一样。
 
 它们的区别在于 `SuspendingIteratorCoroutine` 的实现细节以及在下面这种情况中，异步版本接受一个可选的上下文：
 
@@ -1070,7 +1075,7 @@ fun <T> suspendingSequence(
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence.kt)获取完整代码。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中对 `Channel` 原语的实现使用了对应的协程建造者 `produce{}`，其中对同一个概念提供了更复杂的实现。
+> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence.kt)获取完整代码。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中对 `Channel` 原语的实现使用了对应的协程构建器 `produce{}`，其中对同一个概念提供了更复杂的实现。
 
 我们可以用上[单线程多任务](#单线程多任务)一节的 `newSingleThreadContext{}` 上下文和[非阻塞睡眠](#非阻塞睡眠)一节的非阻塞的 `delay` 函数。
 
@@ -1133,7 +1138,7 @@ suspend fun fibonacci(n: Int, c: SendChannel<Int>) {
 
 我们也可以定义 Go 风格的 `go {...}` 代码块在某种线程池上启动新协程，在固定数量的重量线程上调度任意多的轻量协程。[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/go.kt)的示例实现写在 Java 通用的的 [`ForkJoinPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html) 里。
 
-使用 `go` 协程建造者，对应的 Go 代码主函数看起来是下面这样，其中的`mainBlocking` 是简化的辅助函数，它在 `go{}` 的线程池上调用 `runBlocking`：
+使用 `go` 协程构建器，对应的 Go 代码主函数看起来是下面这样，其中的`mainBlocking` 是简化的辅助函数，它在 `go{}` 的线程池上调用 `runBlocking`：
 
 ```kotlin
 fun main(args: Array<String>) = mainBlocking {
@@ -1265,8 +1270,8 @@ class SafeCounter {
 
 | 原文                       | 译文         |
 | -------------------------- | ------------ |
-| Future                     | 期货         |
-| Promise                    | 诺言         |
-| Continuation               | 续体         |
-| Continuation passing style | 续体传递风格 |
-| Coroutine intrinsics       | 协程内建函数 |
+| future                     | 期货         |
+| promise                    | 诺言         |
+| continuation               | 续体         |
+| continuation passing style | 续体传递风格 |
+| coroutine intrinsics       | 协程内建函数 |
