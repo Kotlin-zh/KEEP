@@ -897,9 +897,13 @@ fun <T> CompletableFuture<T>.await(continuation: Continuation<T>): Any?
 
 ### 状态机
 
-协程实现的性能是非常重要的，这需要尽可能少地创建类和对象。许多语言通过*状态机* 实现，Kotlin 也是这样做的。对于 Kotlin，使用此方法让编译器为每个挂起 lambda 表达式创建一个其中可能有任意数量挂起点的类。
+协程实现的性能至关重要，这需要尽可能少地创建类和对象。<!--
+-->许多语言通过*状态机* 实现，Kotlin 也是这样做的。对于 Kotlin，<!--
+-->使用此方法使得无论挂起 lambda 表达式体内有多少挂起点，<!--
+-->编译器也只创建一个类。
 
-主要思想：挂起函数编译为状态机，其状态对应着挂起点。示例：弄一个有两个挂起点的挂起代码块：
+主要思想：挂起函数编译为状态机，其状态对应着挂起点。<!--
+-->示例：弄一个有两个挂起点的挂起代码块：
 
 ```kotlin
 val a = a()
@@ -911,16 +915,18 @@ c(z)
 
 这个代码块有三个状态：
 
-- 初始化（在挂起点之前）
-- 在第一个挂起点之后
-- 在第二个挂起点之后
+* 初始化（在所有挂起点之前）
+* 在第一个挂起点之后
+* 在第二个挂起点之后
 
-每个状态都是这个代码块续体的一个入口点（初始续体从第一行开始）。
+每个状态都是这个代码块某个续体的入口点<!--
+-->（初始续体从第一行开始）。
 
-代码会被编译为一个匿名类，它的一个方法实现了这个状态机、一个字段持有状态机当前状态，状态之间共享的局部变量字段（也可能有协程闭包的字段，<u>但在这种情况下它是空的</u>）。这是上文代码块通过续体传递风格调用挂起函数 `await` 的 Java 伪代码：
-
-> <u>但在这种情况下它是空的</u>  
-> 译者注：未能 get 到 `它` 指代什么。
+代码会被编译为一个匿名类，它的一个方法实现了这个状态机、<!--
+-->一个字段持有状态机当前状态，<!--
+-->状态之间共享协程的局部变量字段（也可能有协程闭包的字段，<!--
+--><u>但在这种情况下它是空的</u>*译者注：未能 get 到 `它` 指代什么*）。<!--
+-->这是上文代码块通过续体传递风格调用挂起函数 `await` 的 Java 伪代码：
 
 ```java
 lass <anonymous_for_state_machine> extends SuspendLambda<...> {
@@ -938,20 +944,20 @@ lass <anonymous_for_state_machine> extends SuspendLambda<...> {
         else throw IllegalStateException()
         
       L0:
-        // 这次调用，result应该为空
+        // 这次调用，result 应该为空
         a = a()
         label = 1
-        result = foo(a).await(this) // 'this'作为续体传递
-        if (result == COROUTINE_SUSPENDED) return // 如果await挂起了执行则返回
+        result = foo(a).await(this) // 'this' 作为续体传递
+        if (result == COROUTINE_SUSPENDED) return // 如果 await 挂起了执行则返回
       L1:
-        // 外部代码传入.await()的结果恢复协程 
+        // 外部代码传入 .await() 的结果恢复协程 
         y = (Y) result
         b()
         label = 2
-        result = bar(a, y).await(this) // 'this'作为续体传递
-        if (result == COROUTINE_SUSPENDED) return // 如果await挂起了执行则返回
+        result = bar(a, y).await(this) // 'this' 作为续体传递
+        if (result == COROUTINE_SUSPENDED) return // 如果 await 挂起了执行则返回
       L2:
-        // 外部代码传入.await()的结果恢复协程
+        // 外部代码传入 .await() 的结果恢复协程
         Z z = (Z) result
         c(z)
         label = -1 // 没有其他步骤了
@@ -960,11 +966,19 @@ lass <anonymous_for_state_machine> extends SuspendLambda<...> {
 }    
 ```
 
-请注意，这里有 `goto` 运算符，还有标签，因为该例子描述的变化发生在字节码中而不是源码中。
+请注意，这里有 `goto` 运算符，还有标签，因为该例子描述的变化发生在<!--
+-->字节码中而不是源码中。
 
-现在，当协程开始时，我们调用了它的 `resumeWith()` —— `label` 是 `0`，然后我们跳去 `L0`，接着我们做一些工作，将 `label` 设为下一个状态 —— `1`，调用 `.await()`，如果协程执行挂起就返回。当我们想继续执行时，我们再次调用 `resumeWith()`，现在它继续到了 `L1`，做一些工作，将状态设为 `2`，调用 `.await()`，同样在挂起时返回。下一次它从 `L3` 继续，将状态设为 `-1`，这意味着 "结束了，没有更多工作要做了"。
+现在，当协程开始时，我们调用了它的 `resumeWith()` —— `label` 是 `0`，<!--
+-->然后我们跳去 `L0`，接着我们做一些工作，将 `label` 设为下一个状态 —— `1`，调用 `.await()`，<!--
+-->如果协程执行挂起就返回。<!--
+-->当我们想继续执行时，我们再次调用 `resumeWith()`，现在它继续到了 <!--
+-->`L1`，做一些工作，将状态设为 `2`，调用 `.await()`，同样在挂起时返回。<!--
+-->下一次它从 `L3` 继续，将状态设为 `-1`，这意味着 <!--
+-->"结束了，没有更多工作要做了"。
 
-循环内的挂起点只生成一个状态，因为循环也通过 `goto` 工作（根据条件）：
+循环内的挂起点只生成一个状态，<!--
+-->因为循环（可能）也基于 `goto` 工作：
 
 ```kotlin
 var x = 0
@@ -993,10 +1007,10 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
       LOOP:
         if (x > 10) goto END
         label = 1
-        result = nextNumber().await(this) // 'this'作为续体传递 
-        if (result == COROUTINE_SUSPENDED) return // 如果await挂起了执行则返回
+        result = nextNumber().await(this) // 'this' 作为续体传递 
+        if (result == COROUTINE_SUSPENDED) return // 如果 await 挂起了执行则返回
       L1:
-        // 外部代码传入.await()的结果恢复协程
+        // 外部代码传入 .await() 的结果恢复协程
         x += ((Integer) result).intValue()
         label = -1
         goto LOOP
