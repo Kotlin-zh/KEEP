@@ -56,11 +56,11 @@
   * [参考](#参考)
   * [反馈](#反馈)
 * [版本历史](#版本历史)
-  * [3.3 版中的修改](#3.3-版中的修改)
-  * [3.2 版中的修改](#3.2-版中的修改)
-  * [3.1 版中的修改](#3.1-版中的修改)
-  * [3 版中的修改](#3-版中的修改)
-  * [2 版中的修改](#2-版中的修改)
+  * [3.3 版中的改动](#3.3-版中的改动)
+  * [3.2 版中的改动](#3.2-版中的改动)
+  * [3.1 版中的改动](#3.1-版中的改动)
+  * [3 版中的改动](#3-版中的改动)
+  * [2 版中的改动](#2-版中的改动)
 
 ## 用例
 
@@ -1269,39 +1269,56 @@ launch { // 启动协程
 
 异步编程有多种风格。
 
-[异步计算](#异步计算)一节已经讨论了回调函数，这也是协程风格通常用来替换的最不方便的一种风格。任何回调风格的应用程序接口都可以用对应的挂起函数包装，见[这里](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#wrapping-callbacks)。
+[异步计算](#异步计算)一节已经讨论了回调函数，这也是协程风格通常<!--
+-->用来替换的最不方便的一种风格。任何回调风格的应用程序接口都可以<!--
+-->用对应的挂起函数包装，见[这里](#包装回调)。
 
-我们来回顾一下。假设你现在有一个带有以下签名的阻塞 `sendMail` 函数：
+我们来回顾一下。假设你现在有一个带有以下签名的*阻塞* `sendMail` 函数：
+
 
 ```kotlin
 fun sendEmail(emailArgs: EmailArgs): EmailResult
 ```
 
-它在运行时会阻塞执行线程很长的时间。
+它在运行时可能会阻塞执行线程很长的时间。
 
-要使其不阻塞，可以使用错误先行的 [node.js 回调约定](https://www.tutorialspoint.com/nodejs/nodejs_callbacks_concept.htm)，以回调样式表示其非阻塞版本，签名如下：
+要使其不阻塞，可以使用错误先行的 <!--
+-->[node.js 回调约定](https://www.tutorialspoint.com/nodejs/nodejs_callbacks_concept.htm)，<!--
+-->以回调风格表示其非阻塞版本，签名如下：
 
 ```kotlin
 fun sendEmail(emailArgs: EmailArgs, callback: (Throwable?, EmailResult?) -> Unit)
 ```
 
-但是，协程支持其他风格的异步非阻塞编程。其中之一是内置于许多流行语言中的 async/await 风格。在Kotlin中，可以通过引入 `future{}` 和 `.await()` 库函数来复制这种风格，就像 [futures](#Futures) 用例一节所示。
+但是，协程还能支持其他风格的异步非阻塞编程。其中之一<!--
+-->是内置于许多流行语言中的 async/await 风格。<!--
+-->在 Kotlin 中，可以通过引入 `future{}` 和 `.await()` 库函数<!--
+-->来重现这种风格，就像用例中的 [future](#Future) 部分所示。
 
-这种风格主张从函数返回对未来对象的某种约定，而不是传入回调函数作为参数。在这种异步风格中，`sendEmail` 的签名看起来是这样：
+这种风格主张从函数返回对未来对象的某种约定，<!--
+-->而不是传入回调函数作为参数。在这种异步风格中，`sendEmail` 的签名看起来是这样：
 
 ```kotlin
 fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult>
 ```
 
-从风格上讲，最好给这方法的名字加上一个 Async 后缀，因为它们的参数和阻塞版本没什么不同，因而很容易忘记其操作异步的本质。函数 `sendEmailAsync` 启动一个*并发* 异步的操作，可能带来并发的所有陷阱。然而，鼓励这种风格的编程语言通常也提供某种 `await` 原语，在需要的时候把操作重新变回顺序的。
+作为一种风格，最好给这方法的名字加上一个 Async 后缀，因为它们的<!--
+-->参数和阻塞版本没什么不同，因而很容易犯忘记其操作的<!--
+-->异步本质的错误。函数 `sendEmailAsync` 启动一个*并发* 异步的操作，<!--
+-->可能带来并发的所有陷阱。然而，鼓励这种风格的编程语言<!--
+-->通常也提供某种 `await` 原语，在需要的时候把操作重新变回顺序的。
 
-Kotlin 的*原生* 编程风格基于挂起函数。在这种风格下，`sendEmail` 的签名看起来比较自然，不破坏其参数或返回类型，但带有附加的 `suspend` 修饰符：
+Kotlin 的*原生* 编程风格基于挂起函数。在这种风格下，`sendEmail` 的签名<!--
+-->看起来比较自然，不修改其参数或返回类型，而是增加了一个 <!--
+-->`suspend` 修饰符：
 
 ```kotlin
 suspend fun sendEmail(emailArgs: EmailArgs): EmailResult
 ```
 
-我们已经发现，异步和挂起风格可以通过原语很容易地相互转换。例如，`sendEmailAsync` 可以用挂起版本的 `sendEmail` 和 [future 构建器](#https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#building-futures)轻易地实现：
+我们已经发现，async 和挂起风格可以通过原语很容易地相互转换。<!--
+-->例如，挂起版本的 `sendEmail` 可以用 [future 构建器](#构建-Future)轻松实现 `sendEmailAsync`：
+
 
 ```kotlin
 fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult> = future {
@@ -1309,9 +1326,18 @@ fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult> = future {
 }
 ```
 
-因此，在某种意义上，这两种样式是等效的，并且在方便性上都明显优于回调样式。但是，让我们更深入地研究 `sendEmailAsync` 和挂起 `sendEmail` 之间的区别。
+`sendEmailAsync` 用上 [`.await()` 挂起函数](#挂起函数)也能实现挂起函数 `sendEmail`：
 
-让我们先比较一下他们在代码中调用的方式。挂起函数可以像普通函数一样调用：
+
+```kotlin
+suspend fun sendEmail(emailArgs: EmailArgs): EmailResult = 
+    sendEmailAsync(emailArgs).await()
+```
+
+因此，在某种意义上，这两种风格是等效的，并且在方便性上都明显优于回调风格。<!--
+-->然而，我们还可以更深入地研究 `sendEmailAsync` 和挂起的 `sendEmail` 之间的区别。
+
+让我们先比较一下他们在代码中**使用**的方式。挂起函数可以像普通函数一样使用：
 
 ```kotlin
 suspend fun largerBusinessProcess() {
@@ -1321,7 +1347,7 @@ suspend fun largerBusinessProcess() {
 }
 ```
 
-对应的异步风格函数这样调用：
+对应的异步风格函数这样使用：
 
 ```kotlin
 fun largerBusinessProcessAsync() = future {
@@ -1331,13 +1357,34 @@ fun largerBusinessProcessAsync() = future {
 }
 ```
 
-注意，异步风格的函数调用写法更冗长，更容易出错。如果在异步风格的示例中省略了 `.await()` 调用，代码仍然可以编译并工作，但现在它将异步发送电子邮件，甚至在执行较大业务流程的其余部分的同时发送电子邮件，因此可能会修改某些共享状态并引入一些非常难以重现的错误。相反，挂起函数默认是顺序的。对于挂起的函数，无论何时需要任何并发，都可以在代码中通过调用某种 `future{}` 或类似的协程构建器显式地表达。
+显然，异步风格的函数使用写法更冗长，更容易出错。<!--
+-->如果在异步风格的示例中省略了 `.await()` 调用，<!--
+-->代码仍然可以编译并工作，但现在它将异步发送电子邮件，<!--
+-->甚至在执行较大业务流程的其余部分的*同时* 发送电子邮件，<!--
+-->因此可能会修改某些共享状态并引入一些非常难以重现的错误。<!--
+-->相反，挂起函数是*默认顺序* 的。<!--
+-->对于挂起的函数，无论何时需要任何并发，都可以在代码中通过调用<!--
+-->某种 `future{}` 或类似的协程构建器显式地表达。
 
-从这些风格在使用多个库的大型项目中的**比例**方面比较。挂起函数是 Kotlin 的一个轻量级语言概念。所有挂起函数在任何非限定性的 Kotlin  协程中都是完全可用的。异步风格的函数依赖于框架。每个 promises/futures 框架都必须定义自己的类 `async` 函数，该函数返回自己的 promise/future 类，这些类又有对应的类 `async` 函数。
+从在使用多个库的大型项目中的**扩展性**比较。挂起函数是 <!--
+-->Kotlin 的一个轻量级语言概念。所有挂起函数在任何非限定性的 Kotlin 协程中都是完全可用的。<!--
+-->async 风格的函数依赖于框架。每个 promises/futures 框架都必须定义自己的类-`async` 函数，<!--
+-->该函数返回自己的 promise/future 类，这些类又有对应的类-`async` 函数。
 
-从**性能**方面比较。挂起函数提供最小的调用开销。你可以看[实现细节](#实现细节)一节。异步类型的函数对所有挂起机制需要额外持有相当重的 promise/future 抽象。异步样式的函数调用中必须返回一些 future 的实例对象，并且即使函数非常简短，也无法将其优化掉。异步样式不太适合于非常细粒度的分解。
+从**性能**比较。挂起函数拥有最小的调用开销。<!--
+-->你可以看[实现细节](#实现细节)一节。<!--
+-->除了必要的挂起机制之外，async 风格的函数需要额外维护相当重的 promise/future 抽象。<!--
+-->async 风格的函数调用必须返回一些类似 future 的实例对象，并且即使函数非常简短，<!--
+-->也无法将其优化掉。异步样式不太适合于粒度非常细的分解。
 
-从与 JVM/JS 代码的**互操作性**方面比较。使用对应类 future 抽象的异步风格函数与 JVM/JS 代码更具互操作性。在 Java 或 JS 中，它们只是返回相应类 future 对象的函数。对任何不原生支持[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。但是从上面的示例中可以看出，对于任何给定的 promise/future 框架都很容易将任何挂起函数转换为异步风格的函数。因此，您只需用 Kotlin 编写一次挂起函数，然后使用适当的 `future{}` 协程构建器函数，通过一行代码对其进行调整，以实现与任何形式的 promise/future 的互操作性。
+从与 JVM/JS 代码的**互操作性**比较。async 风格的函数与 JVM/JS 代码更具互操作性，<!--
+-->因为这类代码的类型系统匹配 future 的抽象。在 Java 或 JS 中，它们只是返回<!--
+-->类似 future 的对象的函数。对任何不原生支持<!--
+-->[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。<!--
+-->但是从上面的示例中可以看出，对于任何给定的 promise/future 框架都很容易将任何挂起函数转换为 <!--
+-->async 风格的函数。因此，只要用 Kotlin 编写一次挂起函数，<!--
+-->然后使用适当的 `future{}` 协程构建器函数通过一行代码对其进行调整，<!--
+-->就能实现与任何形式的 promise/future 的互操作性。
 
 ### 包装回调
 
@@ -1713,15 +1760,92 @@ class SafeCounter {
 
 ### 从实验性协程移植
 
-> TODO
+> Coroutines were an experimental feature in Kotlin 1.1-1.2. The corresponding APIs were exposed
+> in `kotlin.coroutines.experimental` package. The stable version of coroutines, available since Kotlin 1.3,
+> uses `kotlin.coroutines` package. The experimental package is still available in the standard library and the 
+> code that was compiled with experimental coroutines still works as before.
+> 
+> Kotlin 1.3 compiler provides support for invoking experimental suspending functions and passing suspending
+> lambdas to the libraries that were compiled with experimental coroutines. Behind the scenes, the 
+> adapters between the corresponding stable and experimental coroutine interfaces are created. 
 
 ### 参考
 
-> TODO
+> * Further reading:
+>    * [Coroutines Reference Guide](http://kotlinlang.org/docs/reference/coroutines/coroutines-guide.html) **READ IT FIRST!**.
+> * Presentations:
+>    * [Introduction to Coroutines](https://www.youtube.com/watch?v=_hfBv0a09Jc) (Roman Elizarov at KotlinConf 2017, [slides](https://www.slideshare.net/elizarov/introduction-to-coroutines-kotlinconf-2017))
+>    * [Deep dive into Coroutines](https://www.youtube.com/watch?v=YrrUCSi72E8) (Roman Elizarov at KotlinConf 2017, [slides](https://www.slideshare.net/elizarov/deep-dive-into-coroutines-on-jvm-kotlinconf-2017))
+>    * [Kotlin Coroutines in Practice](https://www.youtube.com/watch?v=a3agLJQ6vt8) (Roman Elizarov at KotlinConf 2018, [slides](https://www.slideshare.net/elizarov/kotlin-coroutines-in-practice-kotlinconf-2018))
+> * Language design overview:
+>   * Part 1 (prototype design): [Coroutines in Kotlin](https://www.youtube.com/watch?v=4W3ruTWUhpw) 
+>     (Andrey Breslav at JVMLS 2016)
+>   * Part 2 (current design): [Kotlin Coroutines Reloaded](https://www.youtube.com/watch?v=3xalVUY69Ok&feature=youtu.be) 
+>     (Roman Elizarov at JVMLS 2017, [slides](https://www.slideshare.net/elizarov/kotlin-coroutines-reloaded)) 
 
 ### 反馈
 
-> TODO
+> Please, submit feedback to:
+>
+> * [Kotlin YouTrack](http://kotl.in/issue) on issues with implementation of coroutines in Kotlin compiler and feature requests.
+> * [`kotlinx.coroutines`](https://github.com/Kotlin/kotlinx.coroutines/issues) on issues in supporting libraries.
+
+## 版本历史
+
+> This section gives an overview of changes between various revisions of coroutines design.
+
+### 3.3 版的改动
+
+> * Coroutines are no longer experimental and had moved to `kotlin.coroutines` package.
+> * The whole section on experimental status is removed and migration section is added.
+> * Some non-normative stylistic changes to reflect evolution of naming style.
+> * Specifications are updated for new features implemented in Kotlin 1.3:
+>   * More operators and different types of functions are supports.
+>   * Changes in the list of intrinsic functions:
+>   * `suspendCoroutineOrReturn` is removed, `suspendCoroutineUninterceptedOrReturn` is provided instead.
+>   * `createCoroutineUnchecked` is removed, `createCoroutineUnintercepted` is provided instead.
+>   * `startCoroutineUninterceptedOrReturn` is provided.
+>   * `intercepted` extension function is added.
+> * Moved non-normative sections with advanced topics and more examples to the appendix at end of the document to simplify reading.
+
+### 3.2 版的改动
+
+> * Added description of `createCoroutineUnchecked` intrinsic.
+
+### 3.1 版的改动
+
+This revision is implemented in Kotlin 1.1.0 release.
+
+> * `kotlin.coroutines` package is replaced with `kotlin.coroutines.experimental`.
+> * `SUSPENDED_MARKER` is renamed to `COROUTINE_SUSPENDED`.
+> * Clarification on experimental status of coroutines added.
+
+### 3 版的改动
+
+> This revision is implemented in Kotlin 1.1-Beta.
+> 
+> * Suspending functions can invoke other suspending function at arbitrary points.
+> * Coroutine dispatchers are generalized to coroutine contexts:
+>   * `CoroutineContext` interface is introduced.
+>   * `ContinuationDispatcher` interface is replaced with `ContinuationInterceptor`.
+>   * `createCoroutine`/`startCoroutine` parameter `dispatcher` is removed.
+>   * `Continuation` interface includes `val context: CoroutineContext`.
+> * `CoroutineIntrinsics` object is replaced with `kotlin.coroutines.intrinsics` package.
+
+### 2 版的改动
+
+> This revision is implemented in Kotlin 1.1-M04.
+> 
+> * The `coroutine` keyword is replaced by suspending functional type.
+> * `Continuation` for suspending functions is implicit both on call site and on declaration site.
+> * `suspendContinuation` is provided to capture continuation is suspending functions when needed.
+> * Continuation passing style transformation has provision to prevent stack growth on non-suspending invocations.
+> * `createCoroutine`/`startCoroutine` coroutine builders are introduced.
+> * The concept of coroutine controller is dropped:
+>   * Coroutine completion result is delivered via `Continuation` interface.
+>   * Coroutine scope is optionally available via coroutine `receiver`.
+>   * Suspending functions can be defined at top-level without receiver.
+> * `CoroutineIntrinsics` object contains low-level primitives for cases where performance is more important than safety.
 
 ## 名词对照
 
