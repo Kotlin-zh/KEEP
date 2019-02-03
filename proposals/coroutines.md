@@ -649,7 +649,11 @@ suspend fun doSomething() {
 
 ### 续体拦截器
 
-让我们回想一下[异步用户界面](#异步用户界面)用例。异步界面应用程序必须保证协程程序体始终在界面线程中执行，尽管事实上各种挂起函数是在任意的线程中恢复协程执行。这是使用*续体拦截器* 完成的。首先，我们要充分了解协程的生命周期。思考一下用了协程构建器 `launch{}` 的代码片段：
+让我们回想一下[异步用户界面](#异步用户界面)用例。异步界面应用程序必须保证<!--
+-->协程程序体始终在界面线程中执行，尽管事实上各种挂起函数<!--
+-->是在任意的线程中恢复协程执行。这是使用*续体拦截器* 完成的。<!--
+-->首先，我们要充分了解协程的生命周期。思考一下这个用了<!--
+-->[协程构建器](#协程构建器) `launch{}` 的代码片段：
 
 ```kotlin
 launch(CommonPool) {
@@ -660,9 +664,17 @@ launch(CommonPool) {
     block2() // 执行 #2
 }
 ```
-协程从 `initialCode` 开始执行，直到第一个挂起点。在挂起点时，协程*挂起*，一段时间后按照相应挂起函数的定义，协程*恢复* 并执行 `block1`，接着再次挂起又恢复后执行 `block2`，在此之后协程*完毕* 了。
 
-续体拦截器可以拦截和包装与 `initialCode`，`block1` 和 `block2` 执行相对应的、从它们恢复的位置到下一个挂起点之间的续体。协程的初始化代码被视作是由协程的*初始续体* 恢复得来。标准库提供了 [`ContinuationInterceptor`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation-interceptor/index.html) 接口（位于 `kotlinx.coroutines` 包）：
+协程从 `initialCode` 开始执行，直到第一个挂起点。在挂起点时，<!--
+-->协程*挂起*，一段时间后按照相应挂起函数的定义，协程*恢复* 并执行 <!--
+-->`block1`，接着再次挂起又恢复后执行 `block2`，在此之后协程*完结* 了。
+
+续体拦截器可以选择拦截并包装 <!--
+-->与 `initialCode`，`block1` 和 `block2` 执行相对应的、从它们恢复的位置到下一个挂起点之间的续体。 <!--
+-->协程的初始化代码被视作是 <!--
+-->由协程的*初始续体* 恢复得来。标准库提供了  <!--
+-->[`ContinuationInterceptor`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation-interceptor/index.html)  <!--
+-->接口（位于 `kotlinx.coroutines` 包）：
 
 ```kotlin
 interface ContinuationInterceptor : CoroutineContext.Element {
@@ -672,16 +684,28 @@ interface ContinuationInterceptor : CoroutineContext.Element {
 }
 ```
 
- `interceptContinuation` 函数包装了协程的续体。每当协程被挂起时，协程框架用下行代码包装实际后续恢复的 `continuation`：
+`interceptContinuation` 函数包装了协程的续体。每当协程被挂起时，<!--
+-->协程框架用下行代码包装实际后续恢复的 `continuation`：
+
 
 ```kotlin
-val facade = continuation.context[ContinuationInterceptor]?.interceptContinuation(continuation) ?: continuation
+val intercepted = continuation.context[ContinuationInterceptor]?.interceptContinuation(continuation) ?: continuation
 ```
-协程框架为每个实际的续体实例实例缓存拦截过的续体，并且在不再需要时调用 `releaseInterceptedContinuation(intercepted)`。想了解更多细节请参阅[实现细节](#实现细节)部分。
 
-> 注意，像 `await` 这样的挂起函数实际上不一定会挂起协程的执行。比如[挂起函数](#挂起函数)一节所展现的 `await` 实现在 future 已经完结的情况下就不会使协程真正挂起（在这种情况下 `resume` 会立刻被调用，协程的执行没有被挂起）。只有协程执行中真正被挂起时，续体才会被拦截，也就是调用 `resume` 之前 `suspendCoroutine` 函数就返回了的时候。
+协程框架为每个实际的续体实例实例缓存拦截过的续体，并且在不再需要时<!--
+-->调用 `releaseInterceptedContinuation(intercepted)`。<!--
+-->想了解更多细节请参阅[实现细节](#实现细节)一节。
 
-让我们来看看 `Swing` 拦截器的具体示例代码，它将执行调度在 Swing 用户界面事件调度线程上。我们先来定义一个包装类 `SwingContinuation`，它调用 `SwingUtilities.invokeLater`，把续体调度到 Swing 事件调度线程：
+> 注意，像 `await` 这样的挂起函数实际上不一定会挂起协程的执行。<!--
+  -->例如，[挂起函数](#挂起函数)一节所展现的 `await` 实现<!--
+  -->在 future 已经完结的情况下就不会使协程真正挂起（在这种情况下 `resume` 会立刻被调用，<!--
+  -->协程的执行并没有被挂起）。只有协程执行中真正被挂起时，续体才会被拦截，<!--
+  -->也就是调用 `resume` 之前 `suspendCoroutine` 函数就返回了的时候。
+
+
+让我们来看看 `Swing` 拦截器的具体示例代码，它将执行调度到 <!--
+-->Swing 用户界面事件调度线程上。我们先来定义一个包装类 `SwingContinuation`，<!--
+-->它调用 `SwingUtilities.invokeLater`，把续体调度到 Swing 事件调度线程：
 
 ```kotlin
 private class SwingContinuation<T>(val cont: Continuation<T>) : Continuation<T> {
@@ -695,16 +719,21 @@ private class SwingContinuation<T>(val cont: Continuation<T>) : Continuation<T> 
 
 然后定义 `Swing` 对象并实现 `ContinuationInterceptor` 接口，用作对应的上下文元素：
 
+
 ```kotlin
 object Swing : AbstractCoroutineContextElement(ContinuationInterceptor), ContinuationInterceptor {
     override fun <T> interceptContinuation(continuation: Continuation<T>): Continuation<T> =
         SwingContinuation(continuation)
 }
 ```
-> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/swing.kt)获得这部分代码。注意：`Swing` 对象在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现还支持了协程调试功能，提供及显示用运行协程的线程表示的当前协程的标识符。
->
 
-现在，可以用带有 `Swing` 参数的[协程构建器](#协程构建器) `launch{}` 来执行完全运行在 Swing 事件调度线程中的协程：
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/swing.kt)获得这部分代码。<!--
+  -->注意：`Swing` 对象在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) <!--
+  -->中的实际实现还支持了协程调试功能，提供对当前协程的标识符的访问和显示，<!--
+  -->标识符用运行协程的线程表示。
+
+现在，可以用带有 `Swing` 参数的[协程构建器](#协程构建器) `launch{}` 来<!--
+-->执行完全运行在 Swing 事件调度线程中的协程：
 
 ```kotlin
 launch(Swing) {
@@ -712,7 +741,8 @@ launch(Swing) {
 }
 ```
 
-> 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中，Swing上下文的实际实现更加复杂，因为它还要集成库的时间和调试工具。
+> 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中，Swing上下文的实际实现<!--
+-->更加复杂，因为它还要集成库的计时和调试工具。
 
 ### 限定挂起
 
@@ -1456,8 +1486,9 @@ class SafeCounter {
 
 ## 名词对照
 
-| 原文                       | 译文         |
-| -------------------------- | ------------ |
-| continuation               | 续体         |
-| continuation passing style | 续体传递风格 |
-| coroutine intrinsics       | 协程内建函数 |
+| 原文                       | 译文          | 语境                      |
+| :------------------------: | :----------: | :-----------------------: |
+| complete / completion      | 完结         | 主语是协程，或协程包装的东西 |
+| continuation               | 续体         | 所有                       |
+| continuation passing style | 续体传递风格  | 所有                       |
+| coroutine intrinsics       | 协程内建函数  | 所有                       |
