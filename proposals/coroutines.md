@@ -742,11 +742,12 @@ launch(Swing) {
 ```
 
 > 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中，Swing上下文的实际实现<!--
--->更加复杂，因为它还要集成库的计时和调试工具。
+  -->更加复杂，因为它还要集成库的计时和调试工具。
 
 ### 限定挂起
 
-为例实现[生产者](#生产者)用例中的 `sequence{}` 和 `yield()`，需要另一类协程构建器和挂起函数。这是协程构建器 `sequence{}` 的示例代码：
+为了实现[生产者](#生产者)用例中的 `sequence{}` 和 `yield()`，需要另一类协程构建器和挂起函数。<!--
+-->这是协程构建器 `sequence{}` 的示例代码：
 
 ```kotlin
 fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
@@ -756,14 +757,22 @@ fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequ
 }
 ```
 
-它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)一节）的另一个原语 [`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。不同点在于它*创建* 一个协程，但并*不* 启动协程，而是返回表示协程的*初始续体* 的 `Continuation<Unit>` 引用：
+它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)一节）的另一个原语 <!--
+-->[`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。<!--
+--><!--
+-->不同点在于它*创建* 一个协程，但并*不* 启动协程，<!--
+-->而是返回表示协程的*初始续体* 的 `Continuation<Unit>` 引用：
 
 ```kotlin
 fun <T> (suspend () -> T).createCoroutine(completion: Continuation<T>): Continuation<Unit>
 fun <R, T> (suspend R.() -> T).createCoroutine(receiver: R, completion: Continuation<T>): Continuation<Unit>
 ```
 
-另一个不同点是传递给构建器的*挂起 lambda 表达式* `block` 是具有 `SequenceScope<T>` 接收者的[扩展 lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。`SequenceScope<T>` 接口提供了生产者代码块的作用域，其在库中定义如下：
+另一个不同点是传递给构建器的*挂起 lambda 表达式* `block` 是<!--
+-->具有 `SequenceScope<T>` 接收者的<!--
+-->[扩展 lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。<!--
+-->`SequenceScope<T>` 接口提供了生产者代码块的*作用域*，其在库中定义如下：
+
 
 ```kotlin
 interface SequenceScope<in T> {
@@ -771,7 +780,10 @@ interface SequenceScope<in T> {
 }
 ```
 
-为了避免生成多个对象，`sequence{}` 实现中定义了 `SequenceCoroutine<T>` 类，它同时实现了 `SequenceScope<T>` 和 `Continuation<Unit>`，因此它可以同时作为 `createCoroutine` 的 `receiver` 参数和 `completion` 续体参数。下面展示了 `SequenceCoroutine<T>` 的一种简单实现：
+为了避免生成多个对象，`sequence{}` 实现中定义了 `SequenceCoroutine<T>` 类，<!--
+-->它同时实现了 `SequenceScope<T>` 和 `Continuation<Unit>`，因此它可以同时作为 <!--
+-->`createCoroutine` 的 `receiver` 参数和 `completion` 续体参数。<!--
+-->下面展示了 `SequenceCoroutine<T>` 的一种简单实现：
 
 ```kotlin
 private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Continuation<Unit> {
@@ -796,13 +808,26 @@ private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Con
 }
 ```
 
-> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/sequence.kt)看到代码。注意，标准库提供了 [`sequence`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/sequence.html) 函数开箱即用的优化实现，而且还支持 [`yieldAll`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence-scope/yield-all.html) 函数。
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/sequence.kt)看到代码。<!--
+  -->注意，标准库提供了 <!--
+  -->[`sequence`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/sequence.html) 函数开箱即用的优化实现<!--
+  -->（位于 `kotlinx.coroutines` 包），<!--
+  -->而且还支持 [`yieldAll`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence-scope/yield-all.html) 函数。
 
-> 实际使用的 `sequence` 代码使用了实验性的 `BuilderInference` 特性以支持[生产者](#生产者)一节中使用的不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。其类型是从传给 `yield` 的参数类型推断得来的。
+> 实际上的 `sequence` 代码使用了实验性的 `BuilderInference` 特性以支持<!--
+  -->[生产者](#生产者)一节中使用的不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。<!--
+  -->其类型是从传给 `yield` 的参数类型推断得来的。
 
-`yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起协程并捕获其续体。续体保存在 `nextStep` 中，并在调用 `computeNext` 时恢复。
+`yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起。<!--
+-->协程并捕获其续体。续体保存在 `nextStep` 中，。<!--
+-->并在调用 `computeNext` 时恢复。
 
-然而，之前展示的 `sequence{}` 和 `yield()`，其续体并不能被任意的挂起函数在各自的作用域里捕获。它们*同步地* 工作。它们需要对如何捕获续体、在何处存储续体和何时恢复续体需要绝对的控制。它们形成了*限定挂起域* 。对挂起的限定作用由作用域类或接口上的 `RestrictSuspension` 注解提供，上面的例子里这个作用域接口是 `SequenceScope`：
+然而，之前展示的 `sequence{}` 和 `yield()`，其续体并不能被任意的挂起函数。<!--
+-->在各自的作用域里捕获。它们*同步地* 工作。。<!--
+-->它们需要对如何捕获续体、。<!--
+-->在何处存储续体和何时恢复续体保持绝对的控制。它们形成了*限定挂起域*。<!--
+-->对挂起的限定作用由作用域类或接口上的 `RestrictSuspension` 注解提供，。<!--
+-->上面的例子里这个作用域接口是 `SequenceScope`：
 
 ```kotlin
 @RestrictsSuspension
@@ -811,11 +836,25 @@ interface SequenceScope<in T> {
 }
 ```
 
-这个注解对能用在 `sequence{}` 域或其他类似的同步协程构建器中的挂起函数有一定的限制。那些扩展*限定性挂起域* 类或接口（以 `@RestrictsSuspension` 标记）的挂起 lambda 表达式或函数称作*限定性挂起函数*。限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
+这个注解对能用在 `sequence{}` 域或其他类似的同步协程构建器中的挂起函数有一定的限制。<!--
+--><!--
+-->那些扩展*限定性挂起域* 类或接口<!--
+-->（以 `@RestrictsSuspension` 标记）的<!--
+-->挂起 lambda 表达式或函数称作*限定性挂起函数*。<!--
+-->限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
 
-回到这个例子，这意味着 `SequenceScope` 作用域内 lambda 表达式的扩展不能调用 `suspendContinuation` 或其他通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 `SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` 实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 lambda 表达式和函数是限定的）。
 
-对于像 `sequence` 这样的限定性协程构建器，支持任意上下文是没有意义的，因为其作用类或接口（比如这个例子里的 `SequenceScope`）已经占用了上下文能提供的服务，因此限定性协程只能使用 `EmptyCoroutineContext` 作为上下文，`SequenceCouroutine` 的取值器实现也会返回这个。尝试创建上下文不是 `EmptyCoroutineSContext` 的限定性协程会引发 `IllegalArgumentException`。
+回到这个例子，这意味着 <!--
+-->`SequenceScope` 作用域的内扩展 lambda 表达式不能调用 `suspendContinuation` 或其他<!--
+-->通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 <!--
+-->`SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` <!--
+-->实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 lambda 表达式和函数是限定的）。
+
+对于像 `sequence` 这样的限定性协程构建器，支持任意上下文是没有意义的，<!--
+-->因为其作用类或接口（比如这个例子里的 `SequenceScope`）已经占用了上下文能提供的服务，因此限定性<!--
+-->协程只能使用 `EmptyCoroutineContext` 作为上下文，`SequenceCouroutine` 的取值器实现<!--
+-->也会返回这个。尝试创建上下文不是 `EmptyCoroutineSContext` 的限定性协程<!--
+-->会引发 `IllegalArgumentException`。
 
 ## 实现细节
 
