@@ -1023,17 +1023,147 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 
 ### 编译挂起函数
 
-挂起函数的字节码与它何时、怎样调用其他挂起函数有关。最简单的情况是一个挂起函数只在其*末尾* 调用其他挂起函数，这称作对它们的*尾调用*。对于那些实现低级并发原语或者包装回调函数的协程来说，这是典型的情况，就像[挂起函数](#挂起函数)一节和[包装回调](#包装回调)一节展示的那样。这些函数在末尾像调用 `suspendCoroutine` 那样调用其他挂起函数。编译这种挂起函数就和编译普通的非挂起函数一样，唯一的区别是通过 [CPS 转换](#协程传递样式)拿到的隐式续体参数会在尾调用中传递给下一个挂起函数。
+挂起函数代码在编译后的样子取决于它调用其他挂起函数的方式和时间。<!--
+-->最简单的情况是一个挂起函数只在其*末尾* 调用其他挂起函数，<!--
+-->这称作对它们的*尾调用*。对于那些实现底层同步原语或者<!--
+-->包装回调函数的协程来说，这是典型的方式，就像[挂起函数](#挂起函数)一节<!--
+-->和[包装回调](#包装回调)一节展示的那样。这些函数在末尾<!--
+-->像调用 `suspendCoroutine` 那样调用其他挂起函数。编译这种挂起函数就和编译普通的非挂起函数一样，<!--
+-->唯一的区别是通过 [CPS 转换](#续体传递风格)拿到的隐式续体参数<!--
+-->会在尾调用中传递给下一个挂起函数。
 
-如果挂起调用出现的位置不是末尾，编译器将为挂起函数生成 一个[状态机](#状态机)。状态机的实例在挂起函数调用时创建，在挂起函数完结时丢弃。
+如果挂起调用出现的位置不是末尾，编译器将为挂起函数生成一个<!--
+-->[状态机](#状态机)。状态机的实例<!--
+-->在挂起函数调用时创建，在挂起函数完结时丢弃。
 
-> 注意：以后的版本中编译策略可能会优化成在第一个挂起点生成状态机实例。
+> 注意：以后的版本中编译策略可能会优化成<!--
+  -->在第一个挂起点生成状态机实例。
 
-反过来，这个状态机实例成了其他非尾调用的挂起函数的*完结续体*。挂起函数多次调用其他挂起函数时，状态机实例会被更新并重用。对比其他[异步编程风格](#异步编程风格)，异步过程的每个后续步骤通常使用单独的、新分配的闭合对象。
+反过来，不在尾部调用其他挂起函数时，这个状态机又充当了*完结续体*。<!--
+-->挂起函数多次调用其他挂起函数时，<!--
+-->状态机实例会被更新并重用。<!--
+-->对比其他[异步编程风格](#异步编程风格)，<!--
+-->（其他异步编程风格中）异步过程的每个后续步骤通常使用单独的、新分配的<!--
+-->闭包。
 
 ### 协程内建函数
 
->  TODO
+> Kotlin standard library provides `kotlin.coroutines.intrinsics` package that contains a number of
+> declarations that expose internal implementation details of coroutines machinery that are explained
+> in this section and should be used with care. These declarations should not be used in general code, so 
+> the `kotlin.coroutines.intrinsics` package is hidden from auto-completion in IDE. In order to use
+> those declarations you have to manually add the corresponding import statement to your source file:
+> 
+> ```kotlin
+> import kotlin.coroutines.intrinsics.*
+> ```
+> 
+> The actual implementation of `suspendCoroutine` suspending function in the standard library is written in Kotlin
+> itself and its source code is available as part of the standard library sources package. In order to provide for the
+> safe and problem-free use of coroutines, it wraps the actual continuation of the state machine 
+> into an additional object on each suspension of coroutine. This is perfectly fine for truly asynchronous use cases
+> like [asynchronous computations](#asynchronous-computations) and [futures](#futures), since the runtime costs of the 
+> corresponding asynchronous primitives far outweigh the cost of an additional allocated object. However, for
+> the [generators](#generators) use case this additional cost is prohibitive, so the intrinsics packages provides
+> primitives for performance-sensitive low-level code.
+> 
+> The `kotlin.coroutines.intrinsics` package in the standard library contains the function named 
+> [`suspendCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/suspend-coroutine-unintercepted-or-return.html)
+> with the following signature:
+> 
+> ```kotlin
+> suspend fun <T> suspendCoroutineUninterceptedOrReturn(block: (Continuation<T>) -> Any?): T
+> ```
+> 
+> It provides direct access to [continuation passing style](#continuation-passing-style) of suspending functions
+> and exposes _unintercepted_ reference to continuation. The later means that invocation of `Continuation.resumeWith` does
+> not go though [ContinuationInterceptor](#continuation-interceptor). It can be used when 
+> writing synchronous coroutines with [restricted suspension](#restricted-suspension) that cannot have installed
+> continuation interceptor (since their context is always empty) or 
+> when currently executing thread is already known to be in the desired context.
+> Otherwise, an intercepted continuation shall be acquired with the 
+> [`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html)
+> extension function (from `kotlin.coroutines.intrinsics` package):
+> 
+> ```kotlin
+> fun <T> Continuation<T>.intercepted(): Continuation<T>
+> ```
+> 
+> and the `Continuation.resumeWith` shall be invoked on the resulting _intercepted_ continuation.
+> 
+> Now, The `block` passed to `suspendCoroutineUninterceptedOrReturn` function can return 
+> [`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html) 
+> marker if the coroutine did suspend (in which case `Continuation.resumeWith` shall be invoked exactly once later) or
+> return the result value `T` or throw an exception (in both last cases `Continuation.resumeWith` shall never be invoked).
+> 
+> A failure to follow this convention when using `suspendCoroutineUninterceptedOrReturn` results 
+> in hard to track bugs that defy attempts to find and reproduce them via tests.
+> This convention is usually easy to follow for `buildSequence`/`yield`-like coroutines,
+> but attempts to write asynchronous `await`-like suspending functions on top of `suspendCoroutineUninterceptedOrReturn` are
+> **discouraged** as they are **extremely tricky** to implement correctly without the help of `suspendCoroutine`.
+> 
+> There are also functions called 
+> [`createCoroutineUnintercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/create-coroutine-unintercepted.html) 
+> (from `kotlin.coroutines.intrinsics` package)
+> with the following signatures:
+> 
+> ```kotlin
+> fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: Continuation<T>): Continuation<Unit>
+> fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, completion: Continuation<T>): Continuation<Unit>
+> ```
+> 
+> They work similarly to `createCoroutine` but return unintercepted reference to the initial continuation.
+> Similarly to `suspendCoroutineUninterceptedOrReturn` it can be in synchronous coroutines for better performance.   
+> For example, optimization version of `sequence{}` builder via `createCoroutineUnintercepted` is shown below:
+> 
+> ```kotlin
+> fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
+>     SequenceCoroutine<T>().apply {
+>         nextStep = block.createCoroutineUnintercepted(receiver = this, completion = this)
+>     }
+> }
+> ```
+> 
+> Optimized version of `yield` via `suspendCoroutineUninterceptedOrReturn` is shown below.
+> Note, that because `yield` always suspends, the corresponding block always returns `COROUTINE_SUSPENDED`.
+> 
+> ```kotlin
+> // Generator implementation
+> override suspend fun yield(value: T) {
+>     setNext(value)
+>     return suspendCoroutineUninterceptedOrReturn { cont ->
+>         nextStep = cont
+>         COROUTINE_SUSPENDED
+>     }
+> }
+> ```
+> 
+> > You can get full code [here](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/optimized/sequenceOptimized.kt)
+> 
+> Two additional intrinsics provide lower-level version of `startCoroutine` (see [coroutine builders](#coroutine-builders) section)
+> and are called
+> [`startCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/start-coroutine-unintercepted-or-return.html):
+> 
+> ```kotlin
+> fun <T> (suspend () -> T).startCoroutineUninterceptedOrReturn(completion: Continuation<T>): Any?
+> fun <R, T> (suspend R.() -> T).startCoroutineUninterceptedOrReturn(receiver: R, completion: Continuation<T>): Any?
+> ```
+> 
+> They are different from `startCoroutine` in two aspects. First of all, [ContinuationInterceptor](#continuation-interceptor)
+> is not automatically used when starting coroutine, so the caller has to ensure the proper execution context if needed.
+> Second, is that if the coroutine does not suspend, but returns a value or throws an exception, then the
+> invocation of `startCoroutineUninterceptedOrReturn` returns this value or throws this exception. If the coroutine
+> suspends, then it returns `COROUTINE_SUSPENDED`. 
+> 
+> The primary use-case for `startCoroutineUninterceptedOrReturn` is to combine it with `suspendCoroutineUninterceptedOrReturn`
+> to continue running suspended coroutine in the same context but with a different block of code:
+> 
+> ```kotlin 
+> suspend fun doSomething() = suspendCoroutineUninterceptedOrReturn { cont ->
+>     // figure out or create a block of code that needs to be run
+>     startCoroutineUninterceptedOrReturn(completion = block) // return result to suspendCoroutineUninterceptedOrReturn 
+> }
+> ```
 
 ## 附录
 
