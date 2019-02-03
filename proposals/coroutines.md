@@ -819,14 +819,14 @@ private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Con
   -->其类型是从传给 `yield` 的参数类型推断得来的。
 
 `yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起。<!--
--->协程并捕获其续体。续体保存在 `nextStep` 中，。<!--
+-->协程并捕获其续体。续体保存在 `nextStep` 中，<!--
 -->并在调用 `computeNext` 时恢复。
 
-然而，之前展示的 `sequence{}` 和 `yield()`，其续体并不能被任意的挂起函数。<!--
--->在各自的作用域里捕获。它们*同步地* 工作。。<!--
--->它们需要对如何捕获续体、。<!--
+然而，之前展示的 `sequence{}` 和 `yield()`，其续体并不能被任意的挂起函数<!--
+-->在各自的作用域里捕获。它们*同步* 地工作。<!--
+-->它们需要对如何捕获续体、<!--
 -->在何处存储续体和何时恢复续体保持绝对的控制。它们形成了*限定挂起域*。<!--
--->对挂起的限定作用由作用域类或接口上的 `RestrictSuspension` 注解提供，。<!--
+-->对挂起的限定作用由作用域类或接口上的 `RestrictSuspension` 注解提供，<!--
 -->上面的例子里这个作用域接口是 `SequenceScope`：
 
 ```kotlin
