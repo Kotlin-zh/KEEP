@@ -101,7 +101,7 @@ inChannel.read(buf) {
 -->过一层，大家都知道能产生多少麻烦（百度“回调地狱”，看看 JavaScript 迫害了多少人）。
 
 同样的计算可以直截了当地表达为协程（前提是有一个合适的库，<!--
--->使输入输出应用程序接口适配协程的需求）：
+-->使 IO 应用程序接口适配协程的需求）：
 
 ```kotlin
 launch {
@@ -1409,9 +1409,19 @@ suspend fun someLongComputation(params: Params): Value = suspendCoroutine { cont
 
 现在计算的返回值变成显式的了，但它还是异步的，也不会阻塞线程。
 
-> 注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 包含了一个协作式可取消协程框架。它提供类似 `suspendCoroutine`，但支持取消的 `suspendCancellableCoroutine` 函数。查看其指南中[取消时](http://kotlinlang.org/docs/reference/coroutines/cancellation-and-timeouts.html)一节了解更多细节。
+> 注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 包含了一个<!--
+  -->协作式可取消协程框架。它提供类似 `suspendCoroutine`，<!--
+  -->但支持取消的 `suspendCancellableCoroutine` 函数。查看<!--
+  -->其指南中[取消与超时时](https://www.kotlincn.net/docs/reference/coroutines/cancellation-and-timeouts.html)一节<!--
+  -->了解更多细节。
 
-为了找一个更复杂的例子，我们看看[异步计算](#异步计算)用例中的 `aRead()` 函数。它可以实现为 Java 非阻塞输入输出中 [`AsynchronousFileChannel`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/AsynchronousFileChannel.html) 的挂起扩展函数，它的 [`CompletionHandler`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/CompletionHandler.html) 回调接口如下：
+举一个更复杂的例子，我们看看<!--
+-->[异步计算](#异步计算)用例中的 `aRead()` 函数。<!--
+-->它可以实现为 Java NIO 中 <!--
+-->[`AsynchronousFileChannel`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/AsynchronousFileChannel.html) <!--
+-->的挂起扩展函数，它的 <!--
+-->[`CompletionHandler`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/CompletionHandler.html) <!--
+-->回调接口如下：
 
 ```kotlin
 suspend fun AsynchronousFileChannel.aRead(buf: ByteBuffer): Int =
@@ -1428,9 +1438,15 @@ suspend fun AsynchronousFileChannel.aRead(buf: ByteBuffer): Int =
     }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/io/io.kt)获取代码。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中实际的实现支持取消以放弃长时间运行的输入输出操作。
+> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/io/io.kt)获取代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) <!--
+  -->中实际的实现支持取消以放弃长时间运行的 IO 操作。
 
-如果你需要处理大量有相同类型回调的函数，你可以定义一个公共包装函数简便地把他们全部转换成挂起函数。例如，[vert.x](http://vertx.io/) 有一个特有的约定，其中所有异步函数都接受一个 `Handler<AsyncResult<T>>` 回调。要通过协程简化任意的 vert.x 函数，可以定义下面这个辅助函数：
+如果你需要处理大量有同类回调的函数，你可以定义一个公共<!--
+-->包装函数简便地把他们全部转换成挂起函数。例如，<!--
+-->[vert.x](http://vertx.io/) 有一个特有的约定，其中所有异步函数都接受一个<!--
+--> `Handler<AsyncResult<T>>` 回调。要通过协程简化任意的 vert.x 函数，<!--
+-->可以定义下面这个辅助函数：
 
 ```kotlin
 inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Unit) = 
@@ -1445,7 +1461,8 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
     }
 ```
 
-通过这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)` 可以在协程中这样调用：`vx { async.foo(params, it) }`。
+通过这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)` <!--
+-->可以在协程中这样调用：`vx { async.foo(params, it) }`。
 
 ### 构建 Future
 
@@ -1542,7 +1559,7 @@ fun main(args: Array<String>) {
 
 ### 异步序列
 
-[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程构建器是一个*同步* 协程的示例。当消费者调用 `Iterator.next()` 时，协程的生产代码同步执行在同一个线程上。`sequence{}` 协程块是受限的，没法用第三方挂起函数挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件输入输出。
+[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程构建器是一个*同步* 协程的示例。当消费者调用 `Iterator.next()` 时，协程的生产代码同步执行在同一个线程上。`sequence{}` 协程块是受限的，没法用第三方挂起函数挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件 IO。
 
 *异步的* 序列构建器支持随意挂起和恢复执行。这意味着其消费者要时刻准备着处理数据还没生产出来的情况。这是挂起函数的原生用例。我们来定义一个类似于普通 [`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/) 接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
 
