@@ -1834,9 +1834,13 @@ fun main(args: Array<String>) = mainBlocking {
 
 ### 互斥
 
-编写可伸缩的异步应用程序应遵循一个原则，确保代码挂起（使用挂起函数）而不阻塞，即实际上不阻塞线程。Java并发原语 [`ReentrantLock`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantLock.html) 阻塞线程，不应在真正的非阻塞代码中使用。要控制对共享资源的访问，可以定义一个 `Mutex` 类，该类挂起协程的执行，而不是阻塞协程。
-
-这个类的声明看起来是这样：
+编写可伸缩的异步应用程序应遵循一个原则，确保<!--
+-->代码挂起（使用挂起函数）而不阻塞，即实际上不阻塞线程。<!--
+-->Java并发原语 <!--
+-->[`ReentrantLock`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantLock.html) <!--
+-->阻塞线程，不应在真正的非阻塞代码中使用。要控制对共享<!--
+-->资源的访问，可以定义一个 `Mutex` 类，该类挂起协程的执行，而不是阻塞协程。<!--
+-->这个类的声明看起来是这样：
 
 ```kotlin
 class Mutex {
@@ -1845,9 +1849,15 @@ class Mutex {
 }
 ```
 
-> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/mutex/mutex.kt)获得完整的实现。在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现还有其他的一些函数。
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/mutex/mutex.kt)获得完整的实现。<!--
+  -->在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现<!--
+  -->还包含其他的一些函数。
 
-使用这个非阻塞互斥的实现，[Go教程的第9个并发示例](https://tour.golang.org/concurrency/9)可以用 Kotlin 的 [`try finally`](https://kotlinlang.org/docs/reference/exceptions.html) 翻译到 Kotlin，这与 Go 的 `defer` 作用相同：
+使用这个非阻塞互斥的实现，<!--
+-->[Go教程的第9个并发示例](https://tour.golang.org/concurrency/9)<!--
+-->可以用 Kotlin 的 <!--
+-->[`try finally`](https://kotlinlang.org/docs/reference/exceptions.html) <!--
+-->翻译到 Kotlin，这与 Go 的 `defer` 作用相同：
 
 ```kotlin
 class SafeCounter {
