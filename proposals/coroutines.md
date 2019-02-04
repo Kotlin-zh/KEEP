@@ -16,7 +16,7 @@
 设计目标：
 
 - 不依赖 Future 之类复杂的库提供的特定设施；
-- 同时涵盖 “async/await” 用例和 “生产者代码块”；
+- 同时涵盖 “async/await” 用例和 “生成器代码块”；
 - 使 Kotlin 协程能包装各种现有的异步 API 
  （如 Java NIO、各种 Future 的实现等）；
 
@@ -25,7 +25,7 @@
 * [用例](#用例)
   * [异步计算](#异步计算)
   * [Future](#Future)
-  * [生产者](#生产者)
+  * [生成器](#生成器)
   * [异步 UI](#异步-UI)
   * [其他用例](#其他用例)
 * [协程概述](#协程概述)
@@ -194,7 +194,7 @@ val future = future {
 -->而且没有使用专门的关键字（比如 C#、JS 以及其他语言中的 `async` 和 `await`）来支持 future：<!--
 -->`future{}` 和 `.await()` 都只是库函数而已。
 
-### 生产者
+### 生成器
 
 协程的另一个典型用例是延时计算序列（在 C#、Python <!--
 -->和很多其他语言中通过 `yield`  实现）。这样的序列可以由看似连续的代码生成，但在运行时只<!--
@@ -227,7 +227,7 @@ println(fibonacci.take(10).joinToString())
 > 这会打印出 `1, 1, 2, 3, 5, 8, 13, 21, 34, 55`。<!--
 -->你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/fibonacci.kt)试一下。
 
-生产者的优势在于支持任意的控制流，包括但不限于 `while`、<!--
+生成器的优势在于支持任意的控制流，包括但不限于 `while`、<!--
 -->`if`、`try`/`catch`/`finally`：
 
 ```kotlin
@@ -746,7 +746,7 @@ launch(Swing) {
 
 ### 限定挂起
 
-为了实现[生产者](#生产者)用例中的 `sequence{}` 和 `yield()`，需要另一类协程构建器和挂起函数。<!--
+为了实现[生成器](#生成器)用例中的 `sequence{}` 和 `yield()`，需要另一类协程构建器和挂起函数。<!--
 -->这是协程构建器 `sequence{}` 的示例代码：
 
 ```kotlin
@@ -771,7 +771,7 @@ fun <R, T> (suspend R.() -> T).createCoroutine(receiver: R, completion: Continua
 另一个不同点是传递给构建器的*挂起 lambda 表达式* `block` 是<!--
 -->具有 `SequenceScope<T>` 接收者的<!--
 -->[扩展 lambda 表达式](https://kotlinlang.org/docs/reference/lambdas.html#function-literals-with-receiver)。<!--
--->`SequenceScope<T>` 接口提供了生产者代码块的*作用域*，其在库中定义如下：
+-->`SequenceScope<T>` 接口提供了生成器代码块的*作用域*，其在库中定义如下：
 
 
 ```kotlin
@@ -800,7 +800,7 @@ private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Con
         done()
     }
 
-    // 实现生产者
+    // 实现生成器
     override suspend fun yield(value: T) {
         setNext(value)
         return suspendCoroutine { cont -> nextStep = cont }
@@ -815,7 +815,7 @@ private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Con
   -->而且还支持 [`yieldAll`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence-scope/yield-all.html) 函数。
 
 > 实际上的 `sequence` 代码使用了实验性的 `BuilderInference` 特性以支持<!--
-  -->[生产者](#生产者)一节中使用的不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。<!--
+  -->[生成器](#生成器)一节中使用的不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。<!--
   -->其类型是从传给 `yield` 的参数类型推断得来的。
 
 `yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起。<!--
@@ -1226,7 +1226,7 @@ sequenceOfLines("https://github.com/kotlin/kotlin-coroutines-examples/tree/maste
 -->方法遇到的问题一样。它返回一个可关闭的 Java 流，但多数流操作不会<!--
 -->自动调用对应的 <!--
 -->`stream.close` 方法，需要用户自己记着关闭流。<!--
--->Kotlin 里也可以定义需要关闭的序列生产者，<!--
+-->Kotlin 里也可以定义需要关闭的序列生成器，<!--
 -->但也会遇到同一个问题，就是语言没有什么自动机制能<!--
 -->保证它们在用完之后关闭。引入一种自动化资源管理的语言机制<!--
 -->明显超出了 Kotlin 协程的领域。
@@ -1594,9 +1594,18 @@ fun main(args: Array<String>) {
 
 ### 异步序列
 
-[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程构建器是一个*同步* 协程的示例。当消费者调用 `Iterator.next()` 时，协程的生产代码同步执行在同一个线程上。`sequence{}` 协程块是受限的，没法用第三方挂起函数挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件 IO。
+[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程构建器<!--
+-->是一个*同步* 协程的示例。当消费者调用 `Iterator.next()` 时，<!--
+-->协程的生产代码同步执行在同一个线程上。<!--
+-->`sequence{}` 协程块是受限的，第三方挂起<!--
+-->函数无法挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件 IO。
 
-*异步的* 序列构建器支持随意挂起和恢复执行。这意味着其消费者要时刻准备着处理数据还没生产出来的情况。这是挂起函数的原生用例。我们来定义一个类似于普通 [`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/) 接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
+*异步的* 序列构建器支持随意挂起和恢复执行。这意味着<!--
+-->其消费者要时刻准备着处理数据还没生产出来的情况。这是<!--
+-->挂起函数的原生用例。我们来定义一个<!--
+-->类似于普通 <!--
+-->[`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/) <!--
+-->接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
 
 ```kotlin
 interface SuspendingIterator<out T> {
@@ -1605,7 +1614,9 @@ interface SuspendingIterator<out T> {
 }
 ```
 
-`SuspendingSequence` 的定义类似于标准 [`Sequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence/index.html) 但返回 `SuspendingIterator`：
+`SuspendingSequence` 的定义类似于标准 <!--
+-->[`Sequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence/index.html) <!--
+-->但返回 `SuspendingIterator`：
 
 ```kotlin
 interface SuspendingSequence<out T> {
@@ -1613,7 +1624,8 @@ interface SuspendingSequence<out T> {
 }
 ```
 
-就像同步序列的作用域一样，我们也给它定义一个作用域接口，但它的挂起不是受限的：
+就像同步序列的作用域一样，我们也给它定义一个作用域接口，<!--
+-->但它的挂起不是受限的：
 
 ```kotlin
 interface SuspendingSequenceScope<in T> {
@@ -1621,9 +1633,9 @@ interface SuspendingSequenceScope<in T> {
 }
 ```
 
-构建器函数 `suspendingSequence{}` 的用法和同步的 `sequence{}` 一样。
-
-它们的区别在于 `SuspendingIteratorCoroutine` 的实现细节以及在下面这种情况中，异步版本接受一个可选的上下文：
+构建器函数 `suspendingSequence{}` 的用法和同步的 `sequence{}` 一样。<!--
+-->它们的区别在于 `SuspendingIteratorCoroutine` 的实现细节以及<!--
+-->在下面这种情况中，异步版本接受一个可选的上下文：
 
 ```kotlin
 fun <T> suspendingSequence(
@@ -1634,11 +1646,16 @@ fun <T> suspendingSequence(
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence.kt)获取完整代码。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中对 `Channel` 原语的实现使用了对应的协程构建器 `produce{}`，其中对同一个概念提供了更复杂的实现。
+> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence.kt)获取完整代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中对 <!--
+  -->`Channel` 原语的实现使用了对应的协程构建器 `produce{}`，<!--
+  -->其中对这个概念提供了更复杂的实现。
 
-我们可以用上[单线程多任务](#单线程多任务)一节的 `newSingleThreadContext{}` 上下文和[非阻塞睡眠](#非阻塞睡眠)一节的非阻塞的 `delay` 函数。
-
-这样我们就能写一个非阻塞序列的实现来生产1~10的整数，两数之间间隔500毫秒：
+我们可以用上[单线程多任务](#单线程多任务)一节的 `newSingleThreadContext{}` 上下文<!--
+-->和[非阻塞睡眠](#非阻塞睡眠)一节的非阻塞的 `delay` 函数。<!--
+--><!--
+-->这样我们就能写一个非阻塞序列的实现来生产 <!--
+-->1~10 的整数，两数之间间隔 500 毫秒：
 
 ```kotlin
 val seq = suspendingSequence(context) {
@@ -1649,7 +1666,13 @@ val seq = suspendingSequence(context) {
 }
 ```
 
-现在消费者协程可以按自己喜欢的方式消费协程了，也可以被任意的挂起函数挂起。 注意，Kotlin [for 循环](https://kotlinlang.org/docs/reference/control-flow.html#for-loops)的工作方式满足这种序列的约定，因此语言中不需要一个专门的 `await for` 循环结构。普通的 `for` 循环就能用来遍历我们刚刚定义的异步序列。生产者没有值的时候它就会挂起：
+现在消费者协程可以按自己喜欢的方式消费序列了，也可以<!--
+-->被任意的挂起函数挂起。注意，<!--
+-->Kotlin [for 循环](https://kotlinlang.org/docs/reference/control-flow.html#for-loops)<!--
+-->的工作方式满足这种序列的约定，因此语言中不需要一个专门的 `await for` 循环结构。<!--
+-->普通的 `for` 循环就能用来遍历我们刚刚定义的异步序列。<!--
+-->生产者没有值的时候它就会挂起：
+
 
 ```kotlin
 for (value in seq) { // 等待生产者生产时挂起
@@ -1657,11 +1680,13 @@ for (value in seq) { // 等待生产者生产时挂起
 }
 ```
 
->   [这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence-example.kt)有写好的示例，其中用一些日志表示要执行的操作。
+> [这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence-example.kt)有写好的示例，<!--
+  -->其中用一些日志表示要执行的操作。
 
 ### 通道
 
-Go 风格的类型安全通道在 Kotlin 中通过库实现。我们可以为发送通道定义一个接口，包含挂起函数 `send`：
+Go 风格的类型安全通道在 Kotlin 中通过库实现。我们可以为<!--
+-->发送通道定义一个接口，包含挂起函数 `send`：
 
 ```kotlin
 interface SendChannel<T> {
@@ -1670,7 +1695,8 @@ interface SendChannel<T> {
 }
 ```
 
-以及风格类似[异步序列](#异步序列)的接收通道，包含挂起函数 `receive` 和 `operator iterator`：
+以及风格类似[异步序列](#异步序列)的接收通道，<!--
+-->包含挂起函数 `receive` 和 `operator iterator`：
 
 ```kotlin
 interface ReceiveChannel<T> {
@@ -1679,7 +1705,12 @@ interface ReceiveChannel<T> {
 }
 ```
 
-`Channel<T>` 类同时实现这两个接口。通道缓存满时 `send` 挂起，通道缓存空时 `receive` 挂起。这样我们可以一字不差的复制 Go 风格的代码。[Go 教程的第4个并发示例](https://tour.golang.org/concurrency/4)中向通道发送 n 个斐波那契数的 `fibonacci` 函数用 Kotlin 实现起来是这样：
+`Channel<T>` 类同时实现这两个接口。<!--
+-->通道缓存满时 `send` 挂起，通道缓存空时 `receive` 挂起。<!--
+-->这样我们可以一字不差地复制 Go 风格的代码。<!--
+-->[Go 教程的第4个并发示例](https://tour.golang.org/concurrency/4)<!--
+-->中向通道发送 n 个斐波那契数的 `fibonacci` 函数用 Kotlin 实现<!--
+-->看起来是这样：
 
 ```kotlin
 suspend fun fibonacci(n: Int, c: SendChannel<Int>) {
@@ -1693,9 +1724,14 @@ suspend fun fibonacci(n: Int, c: SendChannel<Int>) {
     }
     c.close()
 }
+
 ```
 
-我们也可以定义 Go 风格的 `go {...}` 代码块在某种线程池上启动新协程，在固定数量的重量线程上调度任意多的轻量协程。[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/go.kt)的示例实现写在 Java 通用的的 [`ForkJoinPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html) 里。
+我们也可以定义 Go 风格的 `go {...}` 代码块在某种线程池上启动新协程，<!--
+-->在固定数量的重量线程上调度任意多的轻量协程。<!--
+-->[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/go.kt)<!--
+-->的示例实现简单地<!--
+-->写在 Java 通用的的 [`ForkJoinPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html) 里。
 
 使用 `go` 协程构建器，对应的 Go 代码主函数看起来是下面这样，其中的`mainBlocking` 是简化的辅助函数，它在 `go{}` 的线程池上调用 `runBlocking`：
 
