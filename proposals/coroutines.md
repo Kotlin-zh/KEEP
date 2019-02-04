@@ -1544,11 +1544,19 @@ suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
 
 ### 协作式单线程多任务
 
-在单线程应用中实现多任务非常方便，因为这样就不必处理并发或者共享可变状态了。JS、Python 还有很多其他语言甚至没有线程，但有协作式多任务原语。
+在单线程应用中实现多任务非常方便，因为这样就不必<!--
+-->处理并发或者共享可变状态了。JS、Python 还有很多其他语言<!--
+-->甚至没有线程，但有协作式多任务原语。
 
-[协程拦截器](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#coroutine-interceptor)提供了一个简单的工具保证所有协程限制在同一线程上。[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext.kt)的示例代码定义了 `newSingleThreadContext()` 函数，它能创建一个单线程执行的服务并使其适应协程拦截器的需求。
+[协程拦截器](#续体拦截器)提供了一个简单的工具来确保<!--
+-->所有协程限制在同一线程上。<!--
+-->[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext.kt)的示例代码定义了 `newSingleThreadContext()` 函数，<!--
+-->它能创建一个单线程执行的服务并使其适应协程拦截器的<!--
+-->需求。
 
-在下面这个单线程的示例中，我们把它和[构造 futures](#构造 futures)一节中的 `future{}` 协程构建器一起使用，尽管它有两个同时处于活动状态的异步任务。
+在下面这个单线程的示例中，<!--
+-->我们把它和[构造 Future](#构造-Future)一节中的 `future{}` 协程构建器一起使用，<!--
+-->尽管它有两个同时处于活动状态的异步任务。
 
 ```kotlin
 fun main(args: Array<String>) {
@@ -1577,9 +1585,12 @@ fun main(args: Array<String>) {
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext-example.kt)获取完整示例。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)  有 `newSingleThreadContext` 开箱即用的实现。
+> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext-example.kt)获取完整示例。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 有 <!--
+  -->`newSingleThreadContext` 开箱即用的实现。
 
-如果你的整个应用都在同一个线程上执行，你可以定义自己的辅助协程构建器，在其中硬编码一个适应你单线程执行机制的上下文。
+如果你的整个应用都在同一个线程上执行，你可以定义自己的辅助协程构建器，<!--
+-->在其中硬编码一个适应你单线程执行机制的上下文。
 
 ### 异步序列
 
