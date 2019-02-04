@@ -1466,14 +1466,22 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
 
 ### 构建 Future
 
-定义在 [future](#Future) 用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何 future 或 promise 原语，这在[协程构建器](#协程构建器)做了一些介绍：
+定义在 [future](#Future) 用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何 future 或 promise 原语，<!--
+-->这在[协程构建器](#协程构建器)做了一些介绍：
 
 ```kotlin
 fun <T> future(context: CoroutineContext = CommonPool, block: suspend () -> T): CompletableFuture<T> =
         CompletableFutureCoroutine<T>(context).also { block.startCoroutine(completion = it) }
 ```
 
-它与 `launch{}` 的第一点不同是它返回 [`CompletableFuture`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) 的实例，第二点不同是它包含一个默认为 `CommonPool` 的上下文，因此其默认执行在 [`ForkJoinPool.commonPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html#commonPool--)，这个默认执行行为类似于 [`CompletableFuture.supplyAsync`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html#supplyAsync-java.util.function.Supplier-) 方法。`CompletableFutureCoroutine` 的基本实现很直白：
+它与 `launch{}` 的第一点不同是它返回 <!--
+-->[`CompletableFuture`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) 的实例，<!--
+-->第二点不同是它包含一个默认为 `CommonPool` 的上下文，因此<!--
+-->其默认执行在 [`ForkJoinPool.commonPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html#commonPool--)，<!--
+-->这个默认执行行为类似于  <!--
+-->[`CompletableFuture.supplyAsync`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html#supplyAsync-java.util.function.Supplier-) 方法。<!--
+--><!--
+-->`CompletableFutureCoroutine` 的基本实现很直白：
 
 ```kotlin
 class CompletableFutureCoroutine<T>(override val context: CoroutineContext) : CompletableFuture<T>(), Continuation<T> {
@@ -1485,9 +1493,12 @@ class CompletableFutureCoroutine<T>(override val context: CoroutineContext) : Co
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/future.kt)获取代码。[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中实际的实现更高级，因为它要传播对等待结果的期货的取消，以终止协程。
+> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/future.kt)获取代码。<!--
+  -->[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中实际的实现更高级，<!--
+  -->因为它要传播对等待结果的期货的取消，以终止协程。
 
-协程完结时调用对应 future 的 `complete` 方法向协程报告结果。
+协程完结时调用对应 future 的 `complete` 方法<!--
+-->向协程报告结果。
 
 ### 非阻塞睡眠
 
