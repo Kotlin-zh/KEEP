@@ -1049,8 +1049,8 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 ### 协程内建函数
 
 Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许多<!--
--->声明，这些声明暴露了协程机制的内部实现细节，这些细节<!--
--->将在本节中解释，并且应当谨慎使用。这些声明不应在通常的代码中使用，所以 <!--
+-->声明，但应该应当谨慎使用，因为这些声明暴露了协程机制的内部实现细节。<!--
+-->本节将解释这些细节。这些声明不应在通常的代码中使用，所以 <!--
 -->`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用
 这些声明，你必须手动把对应的 import 语句添加到源码文件：
 
@@ -1091,79 +1091,79 @@ fun <T> Continuation<T>.intercepted(): Continuation<T>
 
 此外，还应该在被*拦截* 到的续体上调用 `Continuation.resumeWith`。
 
-> Now, The `block` passed to `suspendCoroutineUninterceptedOrReturn` function can return 
-> [`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html) 
-> marker if the coroutine did suspend (in which case `Continuation.resumeWith` shall be invoked exactly once later) or
-> return the result value `T` or throw an exception (in both last cases `Continuation.resumeWith` shall never be invoked).
-> 
-> A failure to follow this convention when using `suspendCoroutineUninterceptedOrReturn` results 
-> in hard to track bugs that defy attempts to find and reproduce them via tests.
-> This convention is usually easy to follow for `buildSequence`/`yield`-like coroutines,
-> but attempts to write asynchronous `await`-like suspending functions on top of `suspendCoroutineUninterceptedOrReturn` are
-> **discouraged** as they are **extremely tricky** to implement correctly without the help of `suspendCoroutine`.
-> 
-> There are also functions called 
-> [`createCoroutineUnintercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/create-coroutine-unintercepted.html) 
-> (from `kotlin.coroutines.intrinsics` package)
-> with the following signatures:
-> 
-> ```kotlin
-> fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: Continuation<T>): Continuation<Unit>
-> fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, completion: Continuation<T>): Continuation<Unit>
-> ```
-> 
-> They work similarly to `createCoroutine` but return unintercepted reference to the initial continuation.
-> Similarly to `suspendCoroutineUninterceptedOrReturn` it can be in synchronous coroutines for better performance.   
-> For example, optimization version of `sequence{}` builder via `createCoroutineUnintercepted` is shown below:
-> 
-> ```kotlin
-> fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
->     SequenceCoroutine<T>().apply {
->         nextStep = block.createCoroutineUnintercepted(receiver = this, completion = this)
->     }
-> }
-> ```
-> 
-> Optimized version of `yield` via `suspendCoroutineUninterceptedOrReturn` is shown below.
-> Note, that because `yield` always suspends, the corresponding block always returns `COROUTINE_SUSPENDED`.
-> 
-> ```kotlin
-> // Generator implementation
-> override suspend fun yield(value: T) {
->     setNext(value)
->     return suspendCoroutineUninterceptedOrReturn { cont ->
->         nextStep = cont
->         COROUTINE_SUSPENDED
->     }
-> }
-> ```
-> 
-> > You can get full code [here](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/optimized/sequenceOptimized.kt)
-> 
-> Two additional intrinsics provide lower-level version of `startCoroutine` (see [coroutine builders](#coroutine-builders) section)
-> and are called
-> [`startCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/start-coroutine-unintercepted-or-return.html):
-> 
-> ```kotlin
-> fun <T> (suspend () -> T).startCoroutineUninterceptedOrReturn(completion: Continuation<T>): Any?
-> fun <R, T> (suspend R.() -> T).startCoroutineUninterceptedOrReturn(receiver: R, completion: Continuation<T>): Any?
-> ```
-> 
-> They are different from `startCoroutine` in two aspects. First of all, [ContinuationInterceptor](#continuation-interceptor)
-> is not automatically used when starting coroutine, so the caller has to ensure the proper execution context if needed.
-> Second, is that if the coroutine does not suspend, but returns a value or throws an exception, then the
-> invocation of `startCoroutineUninterceptedOrReturn` returns this value or throws this exception. If the coroutine
-> suspends, then it returns `COROUTINE_SUSPENDED`. 
-> 
-> The primary use-case for `startCoroutineUninterceptedOrReturn` is to combine it with `suspendCoroutineUninterceptedOrReturn`
-> to continue running suspended coroutine in the same context but with a different block of code:
-> 
-> ```kotlin 
-> suspend fun doSomething() = suspendCoroutineUninterceptedOrReturn { cont ->
->     // figure out or create a block of code that needs to be run
->     startCoroutineUninterceptedOrReturn(completion = block) // return result to suspendCoroutineUninterceptedOrReturn 
-> }
-> ```
+现在，如果协程确实挂起（在这种情况下 `Continuation.resumeWith` 将在稍后被调用一次），
+或返回了结果值 `T`，亦或抛出了一个异常 （在后两种情况下 `Continuation.resumeWith` 不会被调用），
+传递给 `suspendCoroutineUninterceptedOrReturn` 函数的 `block` 可以将返回
+[`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html) 。
+
+当使用 `suspendCoroutineUninterceptedOrReturn` 时不遵守这一约定，将导致 
+难以追踪错误，并且这与通过测试找到并复现错误的努力背道而驰。
+对于类似 `buildSequence`/`yield` 的协程，这个约定通常很容易遵循，
+但**不建议**尝试在 `suspendCoroutineUninterceptedOrReturn` 上编写类似 `await` 的挂起函数，
+因为没有 `suspendCoroutine` 的帮助，正确实现它们是**非常棘手**的。
+
+这还有一些函数叫做 
+[`createCoroutineUnintercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/create-coroutine-unintercepted.html) 
+（来自 `kotlin.coroutines.intrinsics` 包），
+拥有以下签名：
+
+```kotlin
+fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: Continuation<T>): Continuation<Unit>
+fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, completion: Continuation<T>): Continuation<Unit>
+```
+ 
+它们与 `createCoroutine` 工作方式类似，但会返回初始未拦截续体的引用。
+与 `suspendCoroutineUninterceptedOrReturn` 相似，它可用于同步协程以获得更好的性能。   
+举个例子，`sequence{}` 构建器通过 `createCoroutineUnintercepted` 的优化版本如下所示：
+ 
+```kotlin
+fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
+    SequenceCoroutine<T>().apply {
+        nextStep = block.createCoroutineUnintercepted(receiver = this, completion = this)
+    }
+}
+```
+
+`yield` 通过 `suspendCoroutineUninterceptedOrReturn` 优化的版本如下所示。
+注意，因为 `yield` 总是挂起，所以相应的代码块总是返回 `COROUTINE_SUSPENDED`。
+
+```kotlin
+// 生成器的实现
+override suspend fun yield(value: T) {
+    setNext(value)
+    return suspendCoroutineUninterceptedOrReturn { cont ->
+        nextStep = cont
+        COROUTINE_SUSPENDED
+    }
+}
+```
+
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/optimized/sequenceOptimized.kt)获取完整代码
+
+另外两个内建函数提供了 `startCoroutine`（见[协程构建器](#协程构建器)部分）的底层版本，
+它们叫做
+[`startCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/start-coroutine-unintercepted-or-return.html):
+
+```kotlin
+fun <T> (suspend () -> T).startCoroutineUninterceptedOrReturn(completion: Continuation<T>): Any?
+fun <R, T> (suspend R.() -> T).startCoroutineUninterceptedOrReturn(receiver: R, completion: Continuation<T>): Any?
+```
+
+它们在两个方面与 `startCoroutine` 不同。首先，[续体拦截器](#续体拦截器)在开启协程时
+是不会自动使用的，因此调用者必须确保在需要时拥有正确的执行上下文。
+第二，如果协程没有挂起，但返回了一个值或抛出了一个异常，
+`startCoroutineUninterceptedOrReturn` 的调用将返回这个值或抛出这个异常。如果协程
+挂起，它将返回 `COROUTINE_SUSPENDED`。 
+
+`startCoroutineUninterceptedOrReturn` 的基本用例是与 `suspendCoroutineUninterceptedOrReturn` 结合，
+以在相同的上下文中继续运行挂起的协程，但在不同的码块中：
+
+```kotlin 
+suspend fun doSomething() = suspendCoroutineUninterceptedOrReturn { cont ->
+    // figure out or create a block of code that needs to be run
+    startCoroutineUninterceptedOrReturn(completion = block) // return result to suspendCoroutineUninterceptedOrReturn 
+}
+```
 
 ## 附录
 
