@@ -26,7 +26,7 @@
   * [异步计算](#异步计算)
   * [Future](#Future)
   * [生产者](#生产者)
-  * [异步用户界面](#异步用户界面)
+  * [异步 UI](#异步-UI)
   * [其他用例](#其他用例)
 * [协程概述](#协程概述)
   * [术语](#术语)
@@ -257,11 +257,11 @@ val seq = sequence {
 -->（像 `sequence{}` 和 `yield()` 那样），这能简化延时序列的连接操作，<!--
 -->并提升了性能。
 
-### 异步用户界面
+### 异步 UI
 
-典型的有用户界面的应用程序只有一个事件调度线程，所有界面操作都发生在这个线程上。<!--
--->通常不允许在其他线程修改界面状态。所有用户界面库都提供<!--
--->某种原语，以将操作挪回界面线程中执行。例如，Swing 的 <!--
+典型的 UI 应用程序只有一个事件调度线程，所有 UI 操作都发生在这个线程上。<!--
+-->通常不允许在其他线程修改 UI 状态。所有 UI 库都提供<!--
+-->某种原语，以将操作挪回 UI 线程中执行。例如，Swing 的 <!--
 -->[`SwingUtilities.invokeLater`](https://docs.oracle.com/javase/8/docs/api/javax/swing/SwingUtilities.html#invokeLater-java.lang.Runnable-)，<!--
 -->JavaFX 的 <!--
 -->[`Platform.runLater`](https://docs.oracle.com/javase/8/javafx/api/javafx/application/Platform.html#runLater-java.lang.Runnable-)，<!--
@@ -269,7 +269,7 @@ val seq = sequence {
 -->[`Activity.runOnUiThread`](https://developer.android.com/reference/android/app/Activity.html#runOnUiThread(java.lang.Runnable)) <!--
 -->等等。<!--
 -->下面是一个典型的 Swing 应用程序的代码片段，它执行一些异步<!--
--->操作，然后在用户界面中显示其结果:
+-->操作，然后在 UI 中显示其结果:
 
 ```kotlin
 makeAsyncRequest {
@@ -295,7 +295,7 @@ launch(Swing) {
     try {
         // 执行异步请求时挂起
         val result = makeRequest()
-        // 在界面上显示结果，Swing 上下文保证了我们呆在事件调度线程上
+        // 在 UI 上显示结果，Swing 上下文保证了我们呆在事件调度线程上
         display(result)
     } catch (exception: Throwable) {
         // 异常处理
@@ -649,8 +649,8 @@ suspend fun doSomething() {
 
 ### 续体拦截器
 
-让我们回想一下[异步用户界面](#异步用户界面)用例。异步界面应用程序必须保证<!--
--->协程程序体始终在界面线程中执行，尽管事实上各种挂起函数<!--
+让我们回想一下[异步 UI](#异步-UI)用例。异步 UI 应用程序必须保证<!--
+-->协程程序体始终在 UI 线程中执行，尽管事实上各种挂起函数<!--
 -->是在任意的线程中恢复协程执行。这是使用*续体拦截器* 完成的。<!--
 -->首先，我们要充分了解协程的生命周期。思考一下这个用了<!--
 -->[协程构建器](#协程构建器) `launch{}` 的代码片段：
@@ -704,7 +704,7 @@ val intercepted = continuation.context[ContinuationInterceptor]?.interceptContin
 
 
 让我们来看看 `Swing` 拦截器的具体示例代码，它将执行调度到 <!--
--->Swing 用户界面事件调度线程上。我们先来定义一个包装类 `SwingContinuation`，<!--
+-->Swing UI 事件调度线程上。我们先来定义一个包装类 `SwingContinuation`，<!--
 -->它调用 `SwingUtilities.invokeLater`，把续体调度到 Swing 事件调度线程：
 
 ```kotlin
@@ -1388,9 +1388,12 @@ fun largerBusinessProcessAsync() = future {
 
 ### 包装回调
 
-很多异步应用程序接口集包含回调风格的接口。标准库中的挂起函数 `suspendCoroutine` （见[挂起函数](#挂起函数)一节）提供了一种简单的把任何回调函数包装成 Kotlin 挂起函数的方法。
+很多异步应用程序接口集包含回调风格的接口。标准库中的<!--
+-->挂起函数 `suspendCoroutine`（见[挂起函数](#挂起函数)一节）<!--
+-->提供了一种简单的把任何回调函数包装成 Kotlin 挂起函数的方法。
 
-这里有一个简单的例子。假设你有一个 `someLongCompution` 函数，他有一个回调参数，回调接受某种 `Value` 参数，这个 `Value` 是计算的结果。
+这里有一个简单的例子。有一个简单的模式。假设你有一个带有回调的 `someLongComputation` 函数，<!--
+-->回调接收的参数 `Value` 是计算的结果。
 
 ```kotlin
 fun someLongComputation(params: Params, callback: (Value) -> Unit)
@@ -1718,7 +1721,7 @@ fun main(args: Array<String>) = mainBlocking {
 
 > 通道和 `select` 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现基于无锁的无冲突并发访问数据结构。
 
-这样实现的通道不影响协程上下文中的拦截器。 它可以用于用户界面应用程序，通过[续体拦截器](#续体拦截器)一节提到的事件线程拦截器，或者任何别的拦截器，或者不使用任何拦截器也可以（在后一种情况下，实际的执行线程完全由协程中使用的其他挂起函数的代码决定）。通道实现提供的挂起函数都是非阻塞且线程安全的。
+这样实现的通道不影响协程上下文中的拦截器。 它可以用于 UI 应用程序，通过[续体拦截器](#续体拦截器)一节提到的事件线程拦截器，或者任何别的拦截器，或者不使用任何拦截器也可以（在后一种情况下，实际的执行线程完全由协程中使用的其他挂起函数的代码决定）。通道实现提供的挂起函数都是非阻塞且线程安全的。
 
 ### 互斥
 
