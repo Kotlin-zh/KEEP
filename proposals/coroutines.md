@@ -1048,24 +1048,24 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 
 ### 协程内建函数
 
-Kotlin 标准库 提供了 `kotlin.coroutines.intrinsics` 包，其中包含了许多声明。
-这些声明暴露了协程内部实现细节，这些细节将在本节中解释，
-应当谨慎使用。这些声明不应在通常的代码中使用，所以 
-`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。为了使用
-这些声明，你需要手动添加对应的 import 语句到你的源码文件。
+Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许多<!--
+-->声明，这些声明暴露了协程机制的内部实现细节，这些细节<!--
+-->将在本节中解释，并且应当谨慎使用。这些声明不应在通常的代码中使用，所以 <!--
+-->`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用
+这些声明，你必须手动把对应的 import 语句添加到源码文件：
 
  ```kotlin
  import kotlin.coroutines.intrinsics.*
  ```
  
-挂起函数 `suspendCoroutine` 是在标准库中用 Kotlin 编写实现的，
-其源代码作为标准库源码包的一部分提供。为了让协程
-安全无问题地使用，它将状态机的实际延续
-包装在协程每处挂起的一个附加对象中。这对于
-[异步计算](#异步计算)和 [Future](#Futures) 等真正的异步用例l来说非常好，因为运行期 
-相应异步原语消耗远超分配一个额外的对象。但是，对于
-[生成器](#生成器)用例，这个额外的消耗过高,因此内建函数包提供了
-对于性能敏感底层代码的原语。
+标准库中的 `suspendCoroutine` 挂起函数的实际实现使用了 Kotlin 本身来编写，<!--
+-->其源代码作为标准库源码包的一部分，是可见的。为了<!--
+-->安全、无问题地使用协程，它在协程每次挂起时将状态机的实际续体<!--
+-->包装在一个附加对象中。这对于<!--
+-->[异步计算](#异步计算)和 [Future](#Future) 等真正的异步用例来说非常好，因为<!--
+-->相应异步原语的运行时开销远超分配一个额外的对象的开销。然而，对于<!--
+-->[生成器](#生成器)用例，这个额外的消耗过高，因此内建函数包为<!--
+-->性能敏感的底层代码提供了原语。
 
 标准库中 `kotlin.coroutines.intrinsics` 包中有名为 
 [`suspendCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/suspend-coroutine-unintercepted-or-return.html) 的函数，
