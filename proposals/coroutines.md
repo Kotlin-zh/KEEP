@@ -1903,7 +1903,7 @@ Kotlin 1.3 编译器支持调用实验挂起函数，并将挂起 <!--
   * 第 1 部分（原型设计）：[Kotlin 中的协程](https://www.youtube.com/watch?v=4W3ruTWUhpw) 
     （Andrey Breslav，于 JVMLS 2016）
   * 第 2 部分（当前设计）：[Kotlin 协程新生](https://www.youtube.com/watch?v=3xalVUY69Ok&feature=youtu.be) 
-    （Roman Elizarov，于 JVMLS 2017, [幻灯片](https://www.slideshare.net/elizarov/kotlin-coroutines-reloaded)）
+    （Roman Elizarov，于 JVMLS 2017，[幻灯片](https://www.slideshare.net/elizarov/kotlin-coroutines-reloaded)）
 
 ### 反馈
 
