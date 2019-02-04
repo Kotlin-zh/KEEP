@@ -1882,39 +1882,39 @@ class SafeCounter {
 
 ### 从实验性协程移植
 
-> Coroutines were an experimental feature in Kotlin 1.1-1.2. The corresponding APIs were exposed
-> in `kotlin.coroutines.experimental` package. The stable version of coroutines, available since Kotlin 1.3,
-> uses `kotlin.coroutines` package. The experimental package is still available in the standard library and the 
-> code that was compiled with experimental coroutines still works as before.
-> 
-> Kotlin 1.3 compiler provides support for invoking experimental suspending functions and passing suspending
-> lambdas to the libraries that were compiled with experimental coroutines. Behind the scenes, the 
-> adapters between the corresponding stable and experimental coroutine interfaces are created. 
+协程在 Kotlin 1.1-1.2 是一个实验特性。相关的应用程序接口<!--
+-->位于 `kotlin.coroutines.experimental` 包。随 Kotlin 1.3 推出的稳定版本的协程<!--
+-->位于 `kotlin.coroutines`。标准库中的实验性包仍然可用，并且<!--
+-->用实验性协程编译的代码的行为也和以前一样。
+ 
+Kotlin 1.3 编译器支持调用实验挂起函数，并将挂起 <!--
+-->lambdas 表达式传递给用实验性协程编译的库。<!--
+-->在幕后，我们创建了对应的稳定和实验性协程接口之间的适配器。
 
 ### 参考
 
-> * Further reading:
->    * [Coroutines Reference Guide](http://kotlinlang.org/docs/reference/coroutines/coroutines-guide.html) **READ IT FIRST!**.
-> * Presentations:
->    * [Introduction to Coroutines](https://www.youtube.com/watch?v=_hfBv0a09Jc) (Roman Elizarov at KotlinConf 2017, [slides](https://www.slideshare.net/elizarov/introduction-to-coroutines-kotlinconf-2017))
->    * [Deep dive into Coroutines](https://www.youtube.com/watch?v=YrrUCSi72E8) (Roman Elizarov at KotlinConf 2017, [slides](https://www.slideshare.net/elizarov/deep-dive-into-coroutines-on-jvm-kotlinconf-2017))
->    * [Kotlin Coroutines in Practice](https://www.youtube.com/watch?v=a3agLJQ6vt8) (Roman Elizarov at KotlinConf 2018, [slides](https://www.slideshare.net/elizarov/kotlin-coroutines-in-practice-kotlinconf-2018))
-> * Language design overview:
->   * Part 1 (prototype design): [Coroutines in Kotlin](https://www.youtube.com/watch?v=4W3ruTWUhpw) 
->     (Andrey Breslav at JVMLS 2016)
->   * Part 2 (current design): [Kotlin Coroutines Reloaded](https://www.youtube.com/watch?v=3xalVUY69Ok&feature=youtu.be) 
->     (Roman Elizarov at JVMLS 2017, [slides](https://www.slideshare.net/elizarov/kotlin-coroutines-reloaded)) 
+* 扩展阅读：
+   * [协程指南](https://www.kotlincn.net/docs/reference/coroutines/coroutines-guide.html)**先读这个！**。
+* 介绍：
+   * [初识协程](https://www.youtube.com/watch?v=_hfBv0a09Jc)（Roman Elizarov，于 KotlinConf 2017，[幻灯片](https://www.slideshare.net/elizarov/introduction-to-coroutines-kotlinconf-2017)）
+   * [深入协程](https://www.youtube.com/watch?v=YrrUCSi72E8)（Roman Elizarov，于 KotlinConf 2017，[幻灯片](https://www.slideshare.net/elizarov/deep-dive-into-coroutines-on-jvm-kotlinconf-2017)）
+   * [实践协程](https://www.youtube.com/watch?v=a3agLJQ6vt8)（Roman Elizarov，于 KotlinConf 2018，[幻灯片](https://www.slideshare.net/elizarov/kotlin-coroutines-in-practice-kotlinconf-2018)）
+* 语言设计概述：
+  * 第 1 部分（原型设计）：[Kotlin 中的协程](https://www.youtube.com/watch?v=4W3ruTWUhpw) 
+    （Andrey Breslav，于 JVMLS 2016）
+  * 第 2 部分（当前设计）：[Kotlin 协程新生](https://www.youtube.com/watch?v=3xalVUY69Ok&feature=youtu.be) 
+    （Roman Elizarov，于 JVMLS 2017, [幻灯片](https://www.slideshare.net/elizarov/kotlin-coroutines-reloaded)）
 
 ### 反馈
 
-> Please, submit feedback to:
->
-> * [Kotlin YouTrack](http://kotl.in/issue) on issues with implementation of coroutines in Kotlin compiler and feature requests.
-> * [`kotlinx.coroutines`](https://github.com/Kotlin/kotlinx.coroutines/issues) on issues in supporting libraries.
+请将反馈提交到：
+
+* [Kotlin YouTrack](http://kotl.in/issue) 关于 Kotlin 编译器中协程的实现和特性的意见。
+* [`kotlinx.coroutines`](https://github.com/Kotlin/kotlinx.coroutines/issues) 关于支持库的意见。
 
 ## 版本历史
 
-> This section gives an overview of changes between various revisions of coroutines design.
+本节概述了协程设计的每次修订中的变化。
 
 ### 3.3 版的改动
 
