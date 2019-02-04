@@ -1502,7 +1502,9 @@ class CompletableFutureCoroutine<T>(override val context: CoroutineContext) : Co
 
 ### 非阻塞睡眠
 
-协程不应使用 [`Thread.sleep`](https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html#sleep-long-)，因为它阻塞了线程。但是，通过 Java 的 [`ScheduledThreadPoolExecutor`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledThreadPoolExecutor.html) 实现挂起的非阻塞 `delay` 函数是非常简单的。
+协程不应使用 [`Thread.sleep`](https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html#sleep-long-)，<!--
+-->因为它阻塞了线程。但是，通过 Java 的 [`ScheduledThreadPoolExecutor`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledThreadPoolExecutor.html) <!--
+-->实现挂起的非阻塞 `delay` 函数是非常简单的。
 
 ```kotlin
 private val executor = Executors.newSingleThreadScheduledExecutor {
@@ -1514,9 +1516,18 @@ suspend fun delay(time: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): Unit = su
 }
 ```
 
-> 你可以从 [这里](https://github.com/Kotlin/kotlin-coroutines/blob/master/examples/delay/delay.kt) 获取到这段代码。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)  同样提供了 `delay` 函数。
+> 你可以从 [这里](https://github.com/Kotlin/kotlin-coroutines/blob/master/examples/delay/delay.kt) 获取到这段代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)  同样提供了 `delay` 函数。
 
-注意，这种 `delay` 函数从其单独的“时刻表”线程恢复协程。那些使用[拦截器](https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md#continuation-interceptor)的协程，比如 `Swing`，不会在这个线程上执行，因为它们的拦截器在合适的线程上调度它们。没有拦截器的协程会在时刻表线程上调度。所以这对一个示例来说挺方便的，但是算不上有性能。最好能在相应的拦截器中实现原生的睡眠。对于 `Swing` 拦截器，非阻塞睡眠的原生实现应使用专门为此目的设计的 [`Swing 计时器`](https://docs.oracle.com/javase/8/docs/api/javax/swing/Timer.html)：
+注意，这种 `delay` 函数从其单独的“时刻表”线程恢复协程。<!--
+-->那些使用[拦截器](#续体拦截器)的协程，比如 `Swing`，不会在这个线程上执行，<!--
+-->因为它们的拦截器在合适的线程上调度它们。没有拦截器的协程会<!--
+-->在时刻表线程上调度。所以这对一个示例来说挺方便的，但是算不上有性能。<!--
+-->最好能在相应的拦截器中实现原生的睡眠。
+
+对于 `Swing` 拦截器，非阻塞睡眠的原生实现应使用专门为此目的设计的 <!--
+-->[`Swing 计时器`](https://docs.oracle.com/javase/8/docs/api/javax/swing/Timer.html)：
+
 
 ```kotlin
 suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
@@ -1527,7 +1538,9 @@ suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
 }
 ```
 
-> 你可以从 [这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/swing-delay.kt) 获取到这段代码。注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)  中的 `delay` 实现注意了拦截器的特异性睡眠机制，并在适当的情况下自动使用上述方法。
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/swing-delay.kt)获取到这段代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的 `delay` 实现注意了<!--
+  -->拦截器特异性的睡眠机制，并在适当的情况下自动使用上述方法。
 
 ### 协作式单线程多任务
 
