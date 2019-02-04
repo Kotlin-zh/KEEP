@@ -1051,8 +1051,8 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许多<!--
 -->声明，但应当谨慎使用，因为这些声明暴露了协程机制的内部实现细节。<!--
 -->本节将解释这些细节。这些声明不应在通常的代码中使用，所以 <!--
--->`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用
-这些声明，你必须手动把对应的 import 语句添加到源码文件：
+-->`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用<!--
+-->这些声明，你必须手动把对应的 import 语句添加到源码文件：
 
  ```kotlin
  import kotlin.coroutines.intrinsics.*
