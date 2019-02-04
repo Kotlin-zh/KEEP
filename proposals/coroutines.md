@@ -124,7 +124,7 @@ launch {
 -->（这并不意味着阻塞正在运行它的线程），然后在调用完成时*恢复* 代码执行。<!--
 -->如果我们眯起眼睛，可以想象所有在 `aRead()` 之后的代码已经被包装成一个 <!--
 -->lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此，<!--
--->我们就可以看到这个代码与上面相同，只是更具可读性。
+-->我们就可以看到这个代码和上面的一样，可读性却更强。
 
 我们的明确目标是以一种非常通用的方式支持协程，所以在这个例子中，<!--
 -->`launch{}`、`.aRead()` 和 `.aWrite()` 只是适应协程工作的**库函数**；<!--
@@ -1733,7 +1733,8 @@ suspend fun fibonacci(n: Int, c: SendChannel<Int>) {
 -->的示例实现简单地<!--
 -->写在 Java 通用的的 [`ForkJoinPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html) 里。
 
-使用 `go` 协程构建器，对应的 Go 代码主函数看起来是下面这样，其中的`mainBlocking` 是简化的辅助函数，它在 `go{}` 的线程池上调用 `runBlocking`：
+使用 `go` 协程构建器，对应的 Go 代码主函数看起来是下面这样，<!--
+-->其中的`mainBlocking` 是简化的辅助函数，它在 `go{}` 的线程池上调用 `runBlocking`：
 
 ```kotlin
 fun main(args: Array<String>) = mainBlocking {
@@ -1747,9 +1748,15 @@ fun main(args: Array<String>) = mainBlocking {
 
 > 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-4.kt)查看代码
 
-你可以随意修改通道的缓冲区容量。为了简化，例子中只实现了缓冲通道（最小缓冲1个值），因为无缓冲通道在概念上和我们刚才见过的[异步序列](#异步序列)一样。
+你可以随意修改通道的缓冲区容量。<!--
+-->为了简化，例子中只实现了缓冲通道（最小缓存 1 个值），<!--
+-->因为无缓冲通道在概念上和我们刚才见过的[异步序列](#异步序列)一样。
 
-Go 风格的 `select` 控制流，作用是挂起直到其中一个通道上的一个操作可以生效，可以用 Kotlin DSL 这样实现，因此 [Go 教程的第5个并发示例](https://tour.golang.org/concurrency/5)在 Kotlin 里看起来是这样：
+
+Go 风格的 `select` 控制流，作用是挂起直到其中一个通道上的一个操作可以生效，<!--
+-->可以用 Kotlin DSL 这样实现，<!--
+-->因此 [Go 教程的第5个并发示例](https://tour.golang.org/concurrency/5)<!--
+-->在 Kotlin 里看起来是这样：
 
 ```kotlin
 suspend fun fibonacci(c: SendChannel<Int>, quit: ReceiveChannel<Int>) {
@@ -1772,10 +1779,12 @@ suspend fun fibonacci(c: SendChannel<Int>, quit: ReceiveChannel<Int>) {
 
 > 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-5.kt)查看代码
 
-例子用到了 `select {...}` 实现，它选择一种情况并返回结果，就像 Kotlin 的 
-[`when` 表达式](https://kotlinlang.org/docs/reference/control-flow.html#when-expression)。还用到了一个方便的 `whileSelect { ... }`，它就是 `while(select<Boolean> { ... })`，但需要的括号比较少。
+例子用到了 `select {...}` 实现，它选择一种情况并返回结果，就像 Kotlin 的 <!--
+-->[`when` 表达式](https://kotlinlang.org/docs/reference/control-flow.html#when-expression)，<!--
+-->还用到了一个方便的 `whileSelect { ... }`，它就是 `while(select<Boolean> { ... })`，但需要的括号比较少。
 
-实现 [Go 教程的第6个并发示例](https://tour.golang.org/concurrency/6)中的默认选项只需添加另一个选项到 `select {...}` DSL：
+实现 [Go 教程的第6个并发示例](https://tour.golang.org/concurrency/6)中的默认选项<!--
+-->只需添加另一个选项到 `select {...}` DSL：
 
 ```kotlin
 fun main(args: Array<String>) = mainBlocking {
@@ -1801,15 +1810,27 @@ fun main(args: Array<String>) = mainBlocking {
 
 > 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-6.kt)查看代码
 
- [这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/time.kt)的 `Time.tick` 和 `Time.after` 用非阻塞的 `delay` 函数实现非常简单。
+[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/time.kt)<!--
+-->的 `Time.tick` 和 `Time.after` 用非阻塞的 `delay` 函数实现非常简单。
 
-[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/)能找到其他示例，注释里有对应的 Go 代码的链接。
+[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/)能找到其他示例，<!--
+-->注释里有对应的 Go 代码的链接。
 
-注意，这是通道的简单实现，只用了一个锁来管理内部的等待队列。这使得它容易理解和解释。但是，它从不在这个锁下运行用户代码，因此它是完全并发的。这个锁只在一定程度上限制了它对大量并发线程的可伸缩性。
+注意，这是通道的简单实现，只用了一个<!--
+-->锁来管理内部的等待队列。这使得它容易理解和解释。<!--
+-->但是，它并不在这个锁下运行用户代码，因此它是完全并发的。<!--
+-->这个锁只在一定程度上限制了它对大量并发线程的可伸缩性。
 
-> 通道和 `select` 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现基于无锁的无冲突并发访问数据结构。
+> 通道和 `select` 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) <!--
+-->中的实际实现基于无锁的无冲突并发访问数据结构。
 
-这样实现的通道不影响协程上下文中的拦截器。 它可以用于 UI 应用程序，通过[续体拦截器](#续体拦截器)一节提到的事件线程拦截器，或者任何别的拦截器，或者不使用任何拦截器也可以（在后一种情况下，实际的执行线程完全由协程中使用的其他挂起函数的代码决定）。通道实现提供的挂起函数都是非阻塞且线程安全的。
+这样实现的通道不影响<!--
+-->协程上下文中的拦截器。它可以用于 UI 应用程序，<!--
+-->通过[续体拦截器](#续体拦截器)一节<!--
+-->提到的事件线程拦截器，或者任何别的拦截器，或者不使用<!--
+-->任何拦截器也可以（在后一种情况下，实际的执行线程完全由<!--
+-->协程中使用的其他挂起函数的代码决定）。<!--
+-->通道实现提供的挂起函数都是非阻塞且线程安全的。
 
 ### 互斥
 
