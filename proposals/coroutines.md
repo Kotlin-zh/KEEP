@@ -1048,49 +1048,49 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 
 ### 协程内建函数
 
-> Kotlin standard library provides `kotlin.coroutines.intrinsics` package that contains a number of
-> declarations that expose internal implementation details of coroutines machinery that are explained
-> in this section and should be used with care. These declarations should not be used in general code, so 
-> the `kotlin.coroutines.intrinsics` package is hidden from auto-completion in IDE. In order to use
-> those declarations you have to manually add the corresponding import statement to your source file:
-> 
-> ```kotlin
-> import kotlin.coroutines.intrinsics.*
-> ```
-> 
-> The actual implementation of `suspendCoroutine` suspending function in the standard library is written in Kotlin
-> itself and its source code is available as part of the standard library sources package. In order to provide for the
-> safe and problem-free use of coroutines, it wraps the actual continuation of the state machine 
-> into an additional object on each suspension of coroutine. This is perfectly fine for truly asynchronous use cases
-> like [asynchronous computations](#asynchronous-computations) and [futures](#futures), since the runtime costs of the 
-> corresponding asynchronous primitives far outweigh the cost of an additional allocated object. However, for
-> the [generators](#generators) use case this additional cost is prohibitive, so the intrinsics packages provides
-> primitives for performance-sensitive low-level code.
-> 
-> The `kotlin.coroutines.intrinsics` package in the standard library contains the function named 
-> [`suspendCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/suspend-coroutine-unintercepted-or-return.html)
-> with the following signature:
-> 
-> ```kotlin
-> suspend fun <T> suspendCoroutineUninterceptedOrReturn(block: (Continuation<T>) -> Any?): T
-> ```
-> 
-> It provides direct access to [continuation passing style](#continuation-passing-style) of suspending functions
-> and exposes _unintercepted_ reference to continuation. The later means that invocation of `Continuation.resumeWith` does
-> not go though [ContinuationInterceptor](#continuation-interceptor). It can be used when 
-> writing synchronous coroutines with [restricted suspension](#restricted-suspension) that cannot have installed
-> continuation interceptor (since their context is always empty) or 
-> when currently executing thread is already known to be in the desired context.
-> Otherwise, an intercepted continuation shall be acquired with the 
-> [`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html)
-> extension function (from `kotlin.coroutines.intrinsics` package):
-> 
-> ```kotlin
-> fun <T> Continuation<T>.intercepted(): Continuation<T>
-> ```
-> 
-> and the `Continuation.resumeWith` shall be invoked on the resulting _intercepted_ continuation.
-> 
+Kotlin 标准库 提供了 `kotlin.coroutines.intrinsics` 包，其中包含了许多声明。
+这些声明暴露了协程内部实现细节，这些细节将在本节中解释，
+应当谨慎使用。这些声明不应在通常的代码中使用，所以 
+`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。为了使用
+这些声明，你需要手动添加对应的 import 语句到你的源码文件。
+
+ ```kotlin
+ import kotlin.coroutines.intrinsics.*
+ ```
+ 
+挂起函数 `suspendCoroutine` 是在标准库中用 Kotlin 编写实现的，
+其源代码作为标准库源码包的一部分提供。为了让协程
+安全无问题地使用，它将状态机的实际延续
+包装在协程每处挂起的一个附加对象中。这对于
+[异步计算](#异步计算)和 [Future](#Futures) 等真正的异步用例l来说非常好，因为运行期 
+相应异步原语消耗远超分配一个额外的对象。但是，对于
+[生成器](#生成器)用例，这个额外的消耗过高,因此内建函数包提供了
+对于性能敏感底层代码的原语。
+
+标准库中 `kotlin.coroutines.intrinsics` 包中有名为 
+[`suspendCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/suspend-coroutine-unintercepted-or-return.html) 的函数，
+其拥有一下签名：
+
+```kotlin
+suspend fun <T> suspendCoroutineUninterceptedOrReturn(block: (Continuation<T>) -> Any?): T
+```
+
+它提供了对[续体传递风格](#续体传递风格)挂起函数的直接访问，
+并且暴露了对*未拦截* 的协程的引用。后者意味着调用 `Continuation.resumeWith`
+不通过 [续体拦截器](#续体拦截器)。它可以在
+编写[受限挂起](#受限挂起)的同步协程中使用。这个协程不能安装
+续体拦截器（因为它们的上下文始终为空），或 
+当前已知的执行线程在所需的上下文中。
+否则，应通过 [`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html) 扩展函数
+（来自 `kotlin.coroutines.intrinsics` 包）
+获取一个拦截的续体:
+
+```kotlin
+fun <T> Continuation<T>.intercepted(): Continuation<T>
+```
+
+此外，`Continuation.resumeWith` 应在拦截的续体结果上被调用。
+>
 > Now, The `block` passed to `suspendCoroutineUninterceptedOrReturn` function can return 
 > [`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html) 
 > marker if the coroutine did suspend (in which case `Continuation.resumeWith` shall be invoked exactly once later) or
