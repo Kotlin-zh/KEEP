@@ -1049,7 +1049,7 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 ### 协程内建函数
 
 Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许多<!--
--->声明，但应该应当谨慎使用，因为这些声明暴露了协程机制的内部实现细节。<!--
+-->声明，但应当谨慎使用，因为这些声明暴露了协程机制的内部实现细节。<!--
 -->本节将解释这些细节。这些声明不应在通常的代码中使用，所以 <!--
 -->`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用
 这些声明，你必须手动把对应的 import 语句添加到源码文件：
@@ -1091,30 +1091,30 @@ fun <T> Continuation<T>.intercepted(): Continuation<T>
 
 此外，还应该在被*拦截* 到的续体上调用 `Continuation.resumeWith`。
 
-现在，如果协程确实挂起（在这种情况下 `Continuation.resumeWith` 将在稍后被调用一次），
-或返回了结果值 `T`，亦或抛出了一个异常 （在后两种情况下 `Continuation.resumeWith` 不会被调用），
-传递给 `suspendCoroutineUninterceptedOrReturn` 函数的 `block` 可以将返回
-[`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html) 。
+这时，如果协程确实挂起了，传递给 `suspendCoroutineUninterceptedOrReturn` 函数的 `block` 将返回 <!--
+-->[`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html)<!--
+-->（这种情况下，稍后对 `Continuation.resumeWith` 的调用应该有且仅有一次），否则，<!--
+-->返回结果的值 `T` 或抛出一个异常（无论值还是异常，不能再调用 `Continuation.resumeWith` 了）。
 
-当使用 `suspendCoroutineUninterceptedOrReturn` 时不遵守这一约定，将导致 
-难以追踪错误，并且这与通过测试找到并复现错误的努力背道而驰。
-对于类似 `buildSequence`/`yield` 的协程，这个约定通常很容易遵循，
-但**不建议**尝试在 `suspendCoroutineUninterceptedOrReturn` 上编写类似 `await` 的挂起函数，
-因为没有 `suspendCoroutine` 的帮助，正确实现它们是**非常棘手**的。
+当使用 `suspendCoroutineUninterceptedOrReturn` 时，如果不遵守这一惯例，将导致难以跟踪错误，<!--
+-->而且与通过测试找到并复现错误的努力背道而驰。<!--
+-->对于类似 `buildSequence`/`yield` 的协程来说，这种约定通常很容易遵循，<!--
+-->但是**不建议**基于 `suspendCoroutineUninterceptedOrReturn` 编写类似异步 `await` 的挂起函数，因为如果没有 <!--
+-->`suspendCoroutine` 的帮助，正确实现它们是**极难**的。
 
-这还有一些函数叫做 
-[`createCoroutineUnintercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/create-coroutine-unintercepted.html) 
-（来自 `kotlin.coroutines.intrinsics` 包），
-拥有以下签名：
+另有一些名为 <!--
+-->[`createCoroutineUnintercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/create-coroutine-unintercepted.html) <!--
+-->（位于 `kotlin.coroutines.intrinsics` 包）<!--
+-->的函数拥有以下签名：
 
 ```kotlin
 fun <T> (suspend () -> T).createCoroutineUnintercepted(completion: Continuation<T>): Continuation<Unit>
 fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, completion: Continuation<T>): Continuation<Unit>
 ```
  
-它们与 `createCoroutine` 工作方式类似，但会返回初始未拦截续体的引用。
-与 `suspendCoroutineUninterceptedOrReturn` 相似，它可用于同步协程以获得更好的性能。   
-举个例子，`sequence{}` 构建器通过 `createCoroutineUnintercepted` 的优化版本如下所示：
+它们的工作方式类似于 `createCoroutine` 但会返回对未拦截的初始续体的引用。<!--
+-->类似于 `suspendCoroutineUninterceptedOrReturn`，它可用于同步协程以获得更好的性能。<!--
+-->例如，下面是用 `createCoroutineUnintercepted` 优化过的 `sequence{}` 构建器：
  
 ```kotlin
 fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
@@ -1124,11 +1124,11 @@ fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequ
 }
 ```
 
-`yield` 通过 `suspendCoroutineUninterceptedOrReturn` 优化的版本如下所示。
-注意，因为 `yield` 总是挂起，所以相应的代码块总是返回 `COROUTINE_SUSPENDED`。
+下面是 `yield` 用 `suspendCoroutineUninterceptedOrReturn` 优化过的版本。<!--
+-->注意，因为 `yield` 必定要挂起，对应的代码块也必定返回 `COROUTINE_SUSPENDED`。
 
 ```kotlin
-// 生成器的实现
+// 实现生成器
 override suspend fun yield(value: T) {
     setNext(value)
     return suspendCoroutineUninterceptedOrReturn { cont ->
@@ -1140,28 +1140,28 @@ override suspend fun yield(value: T) {
 
 > 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/optimized/sequenceOptimized.kt)获取完整代码
 
-另外两个内建函数提供了 `startCoroutine`（见[协程构建器](#协程构建器)部分）的底层版本，
-它们叫做
-[`startCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/start-coroutine-unintercepted-or-return.html):
+另外两个内建函数提供 `startCoroutine`（查看[协程构建器](#协程构建器)一节）的底层版本，<!--
+-->名为：<!--
+-->[`startCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/start-coroutine-unintercepted-or-return.html)：
 
 ```kotlin
 fun <T> (suspend () -> T).startCoroutineUninterceptedOrReturn(completion: Continuation<T>): Any?
 fun <R, T> (suspend R.() -> T).startCoroutineUninterceptedOrReturn(receiver: R, completion: Continuation<T>): Any?
 ```
 
-它们在两个方面与 `startCoroutine` 不同。首先，[续体拦截器](#续体拦截器)在开启协程时
-是不会自动使用的，因此调用者必须确保在需要时拥有正确的执行上下文。
-第二，如果协程没有挂起，但返回了一个值或抛出了一个异常，
-`startCoroutineUninterceptedOrReturn` 的调用将返回这个值或抛出这个异常。如果协程
-挂起，它将返回 `COROUTINE_SUSPENDED`。 
+它们在两方面不同于 `startCoroutine`。首先，[续体拦截器](#续体拦截器)<!--
+-->在开启协程时不会自动使用，因此如果需要，调用方必须确保执行上下文的正确性。<!--
+-->其次，如果协程没有挂起，而是返回一个值或抛出异常，那么<!--
+-->调用 `startCoroutineUninterceptedOrReturn` 会返回这个值或抛出这个异常。如果协程<!--
+-->挂起了，将会返回 `COROUTINE_SUSPENDED`。
 
-`startCoroutineUninterceptedOrReturn` 的基本用例是与 `suspendCoroutineUninterceptedOrReturn` 结合，
-以在相同的上下文中继续运行挂起的协程，但在不同的码块中：
+`startCoroutineUninterceptedOrReturn` 的基本用例是与 `suspendCoroutineUninterceptedOrReturn` 结合，<!--
+-->在具有相同上下文的不同代码块中继续运行挂起的协程：
 
 ```kotlin 
 suspend fun doSomething() = suspendCoroutineUninterceptedOrReturn { cont ->
-    // figure out or create a block of code that needs to be run
-    startCoroutineUninterceptedOrReturn(completion = block) // return result to suspendCoroutineUninterceptedOrReturn 
+    // 找到或创建需要运行的代码块
+    startCoroutineUninterceptedOrReturn(completion = block) // 将结果返回到 suspendCoroutineUninterceptedOrReturn
 }
 ```
 
