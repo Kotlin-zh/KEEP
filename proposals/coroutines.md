@@ -1067,30 +1067,30 @@ Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许�
 -->[生成器](#生成器)用例，这个额外的消耗过高，因此内建函数包为<!--
 -->性能敏感的底层代码提供了原语。
 
-标准库中 `kotlin.coroutines.intrinsics` 包中有名为 
-[`suspendCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/suspend-coroutine-unintercepted-or-return.html) 的函数，
-其拥有一下签名：
+标准库 `kotlin.coroutines.intrinsics` 包中名为 <!--
+-->[`suspendCoroutineUninterceptedOrReturn`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/suspend-coroutine-unintercepted-or-return.html) <!--
+-->的函数拥有以下签名：
 
 ```kotlin
 suspend fun <T> suspendCoroutineUninterceptedOrReturn(block: (Continuation<T>) -> Any?): T
 ```
 
-它提供了对[续体传递风格](#续体传递风格)挂起函数的直接访问，
-并且暴露了对*未拦截* 的协程的引用。后者意味着调用 `Continuation.resumeWith`
-不通过 [续体拦截器](#续体拦截器)。它可以在
-编写[受限挂起](#受限挂起)的同步协程中使用。这个协程不能安装
-续体拦截器（因为它们的上下文始终为空），或 
-当前已知的执行线程在所需的上下文中。
-否则，应通过 [`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html) 扩展函数
-（来自 `kotlin.coroutines.intrinsics` 包）
-获取一个拦截的续体:
+它提供了对挂起函数的[续体传递风格](#续体传递风格)的直接访问，<!--
+-->并且暴露了对*未拦截* 的续体的引用。后者意味着 `Continuation.resumeWith` 的调用<!--
+-->可以不通过 [续体拦截器](#续体拦截器)。它可以用于<!--
+-->编写[受限挂起](#受限挂起)的同步协程，因为这种协程不能安装<!--
+-->续体拦截器（这又是因为它们的上下文始终为空），或者<!--
+-->用在能确定当前执行线程就在所需的上下文中时（因为这时候也没必要拦截）。<!--
+-->否则，应使用 <!--
+-->[`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html) <!--
+-->扩展函数（位于 `kotlin.coroutines.intrinsics` 包）获取被拦截的续体:
 
 ```kotlin
 fun <T> Continuation<T>.intercepted(): Continuation<T>
 ```
 
-此外，`Continuation.resumeWith` 应在拦截的续体结果上被调用。
->
+此外，还应该在被*拦截* 到的续体上调用 `Continuation.resumeWith`。
+
 > Now, The `block` passed to `suspendCoroutineUninterceptedOrReturn` function can return 
 > [`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html) 
 > marker if the coroutine did suspend (in which case `Continuation.resumeWith` shall be invoked exactly once later) or
