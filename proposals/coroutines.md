@@ -287,7 +287,7 @@ makeAsyncRequest {
 }
 ```
 
-这很像我们之间在[异步计算](#异步计算)用例见过的回调地狱，<!--
+这很像我们之前在[异步计算](#异步计算)用例见过的回调地狱，<!--
 -->所以也能通过协程优雅地解决：
 
 ```kotlin
@@ -295,7 +295,7 @@ launch(Swing) {
     try {
         // 执行异步请求时挂起
         val result = makeRequest()
-        // 在 UI 上显示结果，Swing 上下文保证了我们呆在事件调度线程上
+        // 在 UI 上显示结果，Swing 上下文保证了我们位于事件调度线程上
         display(result)
     } catch (exception: Throwable) {
         // 异常处理
@@ -334,7 +334,7 @@ launch(Swing) {
   -->而不阻塞当前执行线程。挂起函数<!--
   -->不能在常规代码中被调用，只能在其他挂起函数或挂起 lambda 表达式中（见下方）。<!--
   -->例如，[用例](#用例)所示的 `.await()` 和 `yield()` 是<!--
-  -->在库中定义的挂起函数。标准库提供了基础的挂起函数，用于定义<!--
+  -->在库中定义的挂起函数。标准库提供了原始的挂起函数，用于定义<!--
   -->其他所有挂起函数。
 
 * *挂起 lambda 表达式*——必须在协程中运行的代码块。<!--
@@ -396,7 +396,7 @@ launch(Swing) {
   -->续体：循环运行第一次后，`i=2`，挂起；循环运行第二次后，`i=3`，挂起……<!--
   -->最后一次打印“over”并完结协程。已经*创建*，但尚未<!--
   -->*启动*的协程，由它的*初始续体*表示，这由它的整个执行组成，<!--
-  -->类型为 `Continuation<Unit> ` 。
+  -->类型为 `Continuation<Unit> `。
 
 如上所述，驱动协程的要求之一是灵活性：<!--
 -->我们希望能够支持许多现有的异步应用程序接口以及其他用例，并尽量减少<!--
@@ -430,7 +430,7 @@ fun <T> Continuation<T>.resumeWithException(exception: Throwable)
 
 ### 挂起函数
 
-一个典型的*挂起函数*的某种实现，例如 `.await()` ，起来是这样的：
+一个典型的*挂起函数*的某种实现，例如 `.await()`，看起来是这样的：
 
 ```kotlin
 suspend fun <T> CompletableFuture<T>.await(): T =
@@ -462,7 +462,7 @@ doSomethingAsync(...).await()
 `suspend` 修饰符可以用于任何函数：顶层函数、扩展函数、成员函数、<!--
 -->局部函数或操作符函数。
 
-> 属性的取值器和设值器、构造器以及某些操作符函数<!--
+> 属性的取值器和设值器、构造函数以及某些操作符函数<!--
 -->（也就是 `getValue`，`setValue`，`provideDelegate`，`get`，`set` 以及 `equals`）不能带有 `suspend` 修饰符。<!--
 -->这些限制将来可能会被消除。
 
@@ -480,7 +480,7 @@ suspend fun <T> suspendCoroutine(block: (Continuation<T>) -> Unit): T
 -->被调用，因为它是一个挂起函数），它捕获了协程的执行状态<!--
 -->到一个*续体*实例，然后将其传给指定的 `block` 作为参数。<!--
 -->为了恢复协程的执行，代码块需要在该线程或稍后在其他某个线程中调用 `continuation.resumeWith()`<!--
--->（直接调用或通过 `continuation.resume()` 或 `continuation.resumeWithException()` 调用）。<!--
+-->（直接调用 `continuation.resume()` 或 `continuation.resumeWithException()` 扩展）。<!--
 --><!--
 -->*实际*的协程挂起发生在当 `suspendCoroutine` 代码块没有调用 `resumeWith` 就返回时。<!--
 -->如果协程还未从代码块返回就直接被恢复，<!--
@@ -518,7 +518,7 @@ fun launch(context: CoroutineContext = EmptyCoroutineContext, block: suspend () 
 
 这个实现使用了 [`Continuation(context) { ... }`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation.html) <!--
 -->函数（来自 `kotlin.coroutines` 包），它提供了一种<!--
--->简写以实现包含其给定的 `context` 值和 `resumeWith` 函数体的<!--
+-->简写以实现包含其给定的 `context` 值以及 `resumeWith` 函数体的<!--
 --> `Continuation` 接口。这个续体作为*完结续体*被传给 <!--
 -->[`block.startCoroutine(...)`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/start-coroutine.html) 扩展函数<!--
 -->（来自 `kotlin.coroutines` 包）。
