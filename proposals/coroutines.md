@@ -2,7 +2,7 @@
 
 * **类型**：设计提案
 * **作者**：Andrey Breslav, Roman Elizarov
-* **贡献者**： Vladimir Reshetnikov, Stanislav Erokhin, Ilya Ryzhenkov, Denis Zharkov
+* **贡献者**： Vladimir Reshetnikov，Stanislav Erokhin，Ilya Ryzhenkov，Denis Zharkov
 * **状态**：从 Kotlin 1.3 开始稳定，在 Kotlin 1.1-1.2 中为实验性
 
 ## 摘要
@@ -85,7 +85,7 @@ inChannel.read(buf) {
     ...
     process(buf, bytesRead)
     
-    // 异步从 `buf` 写数据, 完成后执行 lambda 表达式
+    // 异步从 `buf` 写数据，完成后执行 lambda 表达式
     outChannel.write(buf) {
         // 这个 lambda 表达式会在写完后执行
         ...
@@ -343,7 +343,7 @@ launch(Swing) {
   -->就像常规 lambda 表达式是匿名局部函数的短语法形式一样，<!--
   -->挂起 lambda 表达式是匿名挂起函数的短语法形式。它可能会通过调用其他挂起函数*挂起*执行代码，<!--
   -->而不阻塞当前执行线程。<!--
-  -->例如，[用例](#用例)所示的跟在 `launch` , `future` , 和 `BuildSequence` 函数后面花括号里的代码块<!--
+  -->例如，[用例](#用例)所示的跟在 `launch`、`future`，和 `BuildSequence` 函数后面花括号里的代码块<!--
   -->就是挂起 lambda 表达式。
 
   > 注意：挂起 lambda 表达式可以在其代码的任意位置调用挂起函数，只要这个位置能写从这个 lambda 表达式<!--
@@ -597,7 +597,7 @@ interface CoroutineContext {
   -->扩展函数，提供迭代上下文中所有元素的方法。
 * 操作符 [`plus`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/plus.html) <!--
   -->类似于标准库的 [`Set.plus`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/plus.html) <!--
-  -->扩展函数，返回两个上下文的组合, 同时加号右边的元素会替换掉<!--
+  -->扩展函数，返回两个上下文的组合，同时加号右边的元素会替换掉<!--
   -->加号左边具有相同键的元素。
 * 函数 [`minusKey`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/minus-key.html) <!--
   -->返回不包含指定键的上下文。
