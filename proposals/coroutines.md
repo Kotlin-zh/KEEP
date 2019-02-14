@@ -559,16 +559,16 @@ fun <R, T> (suspend  R.() -> T).startCoroutine(receiver: R, completion: Continua
 -->把协程看作一个轻量线程。在这种情况下，协程上下文就像是一堆线程局部化变量。<!--
 -->不同之处在线程局部化变量是可变的，协程上下文是不可变的，<!--
 -->但对于协程这并不是一个严重的限制，因为他们是如此轻量<!--
--->以至于当需要改变上下文时可以很容易地开一个新的协程。
+-->以至于当需要改变上下文时可以很容易地开启一个新的协程。
 
 标准库没有包含上下文的任何具体实现，<!--
 -->但是有接口和抽象类，以便以*可组合*的方式<!--
 -->在库中定义所有这些方面，因此来自不同库的各个方面可以<!--
 -->和平共存在同一个上下文中。
 
-从概念上讲，协程上下文是一组可索引的元素，其中每个元素有唯一的键。<!--
--->它是集合和映射的混合体。它的元素有像在映射中的那样的键，但它的键直接与元素关联，<!--
--->更像在集合中。标准库定义了 <!--
+从概念上讲，协程上下文是一组索引元素，其中每个元素有唯一的键。<!--
+-->它是 set 与 map 的混合体。它的元素有像在 map 中的那样的键，但它的键直接与元素关联，<!--
+-->更像是 set。标准库定义了 <!--
 -->[`CoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/index.html) 的最小接口<!--
 -->（位于 `kotlinx.coroutines` 包）：
 
@@ -616,7 +616,7 @@ interface CoroutineContext {
 
 标准库提供 <!--
 -->[`EmptyCoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-empty-coroutine-context/index.html) <!--
--->—— 一个不包括任何元素的（空的） `CoroutineContext` 实例。
+-->—— 一个不包含任何元素的（空的） `CoroutineContext` 实例。
 
 所有第三方协程元素应该继承标准库的 <!--
 -->[`AbstractCoroutineContextElement`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-abstract-coroutine-context-element/index.html) <!--
@@ -666,15 +666,15 @@ launch(CommonPool) {
 ```
 
 协程从 `initialCode` 开始执行，直到第一个挂起点。在挂起点时，<!--
--->协程*挂起*，一段时间后按照相应挂起函数的定义，协程*恢复*并执行 <!--
--->`block1`，接着再次挂起又恢复后执行 `block2`，在此之后协程*完结*了。
+-->协程*挂起*，一段时间后按照相应挂起函数的定义，协程*恢复*并执行
+`block1`，接着再次挂起又恢复后执行 `block2`，在此之后协程*完结*了。
 
-续体拦截器可以选择拦截并包装 <!--
--->与 `initialCode`，`block1` 和 `block2` 执行相对应的、从它们恢复的位置到下一个挂起点之间的续体。 <!--
--->协程的初始化代码被视作是 <!--
--->由协程的*初始续体*恢复得来。标准库提供了  <!--
--->[`ContinuationInterceptor`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation-interceptor/index.html)  <!--
--->接口（位于 `kotlinx.coroutines` 包）：
+续体拦截器可以选择拦截并包装<!--
+-->与 `initialCode`，`block1` 和 `block2` 执行相对应的、从它们恢复的位置到下一个挂起点之间的续体。<!--
+-->协程的初始化代码被视作是<!--
+-->由协程的*初始续体*恢复得来。标准库提供了
+[`ContinuationInterceptor`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation-interceptor/index.html)
+接口（位于 `kotlinx.coroutines` 包）：
 
 ```kotlin
 interface ContinuationInterceptor : CoroutineContext.Element {
@@ -685,7 +685,7 @@ interface ContinuationInterceptor : CoroutineContext.Element {
 ```
 
 `interceptContinuation` 函数包装了协程的续体。每当协程被挂起时，<!--
--->协程框架用下行代码包装实际后续恢复的 `continuation`：
+-->协程框架用下面这行代码包装实际后续恢复的 `continuation`：
 
 
 ```kotlin
@@ -741,7 +741,7 @@ launch(Swing) {
 }
 ```
 
-> 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中，Swing上下文的实际实现<!--
+> 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中，Swing 上下文的实际实现<!--
   -->更加复杂，因为它还要集成库的计时和调试工具。
 
 ### 限定挂起
@@ -838,7 +838,7 @@ interface SequenceScope<in T> {
 
 这个注解对能用在 `sequence{}` 域或其他类似的同步协程构建器中的挂起函数有一定的限制。<!--
 --><!--
--->那些扩展*限定性挂起域* 类或接口<!--
+-->那些扩展*限定性挂起域*类或接口<!--
 -->（以 `@RestrictsSuspension` 标记）的<!--
 -->挂起 lambda 表达式或函数称作*限定性挂起函数*。<!--
 -->限定性挂起函数只接受来自同一个限定挂起域实例的的成员或扩展挂起函数作为参数。
@@ -848,7 +848,7 @@ interface SequenceScope<in T> {
 -->`SequenceScope` 作用域的内扩展 lambda 表达式不能调用 `suspendContinuation` 或其他<!--
 -->通用挂起函数。要挂起 `sequence` 协程的执行，最终必须通过调用 <!--
 -->`SequenceScope.yield`。`yield` 本身被实现为 `SequenceScope` <!--
--->实现的成员函数，对其内部不作任何限制（只有*扩展* 挂起 lambda 表达式和函数是限定的）。
+-->实现的成员函数，对其内部不作任何限制（只有*扩展*挂起 lambda 表达式和函数是限定的）。
 
 对于像 `sequence` 这样的限定性协程构建器，支持任意上下文是没有意义的，<!--
 -->因为其作用类或接口（比如这个例子里的 `SequenceScope`）已经占用了上下文能提供的服务，因此限定性<!--
