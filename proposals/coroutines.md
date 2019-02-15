@@ -66,7 +66,7 @@
 
 协程可以被视作*可挂起的计算*的实例。即，可以在某些<!--
 -->点上挂起，稍后在另一个线程上恢复执行。协程相互调用<!--
--->（来回传递数据），即可形成<!--
+-->（互相传递数据），即可形成<!--
 -->协作式多任务处理机制。
 
 ### 异步计算
@@ -96,9 +96,9 @@ inChannel.read(buf) {
 ```
 
 注意，我们在回调内部有一个回调，虽然这能节省很多没有意义的代码（例如，没有<!--
--->必要将  `buf ` 参数显式传递到回调，它们被看作是闭包的一部分），但缩进<!--
+-->必要将  `buf ` 参数显式传递给回调，它们只是将它视为闭包的一部分），但缩进<!--
 -->级别每次都在增长，而且只要嵌套超<!--
--->过一层，大家都知道能产生多少麻烦（谷歌搜索“回调地狱”，看看 JavaScript 迫害了多少人）。
+-->过一层，大家都知道会产生多少麻烦（谷歌搜索“回调地狱”，看看 JavaScript 迫害了多少人）。
 
 同样的计算可以直截了当地表达为协程（前提是有一个合适的库，<!--
 -->使 IO 应用程序接口适配协程的需求）：
@@ -121,15 +121,15 @@ launch {
 ```
 
 这里的 `aRead()` 和 `aWrite()` 是特殊的*挂起函数* —— 它们可以*挂起*代码执行<!--
--->（这并不意味着阻塞正在运行它的线程），然后在调用完成时*恢复*代码执行。<!--
+-->（这并不意味着阻塞正在运行它的线程），并在调用完成时*恢复*。<!--
 -->如果我们眯起眼睛，可以想象所有在 `aRead()` 之后的代码已经被包装成一个
 lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此，<!--
--->我们就可以看到这个代码和上面的一样，可读性却更强。
+-->我们就可以看到这段代码和上面的相同，可读性却更强。
 
-我们的明确目标是以一种非常通用的方式支持协程，所以在这个例子中，<!--
+我们的明确目标是以一种非常通用的方式支持协程，所以在此示例中，<!--
 -->`launch{}`、`.aRead()` 和 `.aWrite()` 只是适应协程工作的**库函数**；<!--
 -->`launch` 是*协程构建器* —— 它创建并启动协程，<!--
--->而 `aRead()` 和 `aWrite()` 作为特殊的<!--
+-->而 `aRead()` 与 `aWrite()` 作为特殊的<!--
 -->*挂起函数*，它隐式地接受<!--
 -->*续体*（续体就是一般的回调）。
 
@@ -198,7 +198,7 @@ val future = future {
 
 协程的另一个典型用例是延时计算序列（在 C#、Python <!--
 -->和很多其他语言中通过 `yield`  实现）。这样的序列可以由看似顺序的代码生成，但在运行时只<!--
--->计算真正用到的元素：
+-->计算所请求的元素：
 
 ```kotlin
 // 推断出类型为 Sequence<Int>
@@ -218,7 +218,7 @@ val fibonacci = sequence {
 代码创建了一个表示[斐波那契数列](https://zh.wikipedia.org/wiki/斐波那契数列)的延迟序列，<!--
 -->它可以是无限长的<!--
 -->（类似 [Haskell 的无限长列表](http://www.techrepublic.com/article/infinite-list-tricks-in-haskell/)）。<!--
--->我们可以只计算其中一些，例如，通过 `take()`：
+-->我们可以只计算其中一部分，例如，通过 `take()`：
 
 ```kotlin
 println(fibonacci.take(10).joinToString())
@@ -261,7 +261,7 @@ val seq = sequence {
 
 典型的 UI 应用程序只有一个事件调度线程，所有 UI 操作都发生在这个线程上。<!--
 -->通常不允许在其他线程修改 UI 状态。所有 UI 库都提供<!--
--->某种原语，以将操作挪回 UI 线程中执行。例如，Swing 的
+-->某种原语，以将操作转移回 UI 线程中执行。例如，Swing 的
 [`SwingUtilities.invokeLater`](https://docs.oracle.com/javase/8/docs/api/javax/swing/SwingUtilities.html#invokeLater-java.lang.Runnable-)，<!--
 -->JavaFX 的
 [`Platform.runLater`](https://docs.oracle.com/javase/8/javafx/api/javafx/application/Platform.html#runLater-java.lang.Runnable-)，<!--
@@ -326,8 +326,8 @@ launch(Swing) {
 ### 术语
 
 * *协程*——*可挂起计算*的*实例*。它在概念上类似于线程，在这个意义上，<!--
-  -->它需要一个代码块运行，并具有类似的生命周期 —— 它可以被*创建* 和*启动*，但它不绑定到<!--
-  -->任何特定的线程。它可以在一个线程中*挂起*其执行， 并在另一个线程中*恢复*。<!--
+  -->它需要一个代码块运行，并具有类似的生命周期 —— 它可以被*创建*和*启动*，但它不绑定到<!--
+  -->任何特定的线程。它可以在一个线程中*挂起*其执行，并在另一个线程中*恢复*。<!--
   -->而且，像 future 或 promise 那样，它在*完结*时可能伴随着某种结果（值或异常）。
 
 * *挂起函数*—— `suspend` 修饰符标记的函数。它可能会通过调用其他挂起函数*挂起*执行代码，<!--
@@ -346,7 +346,7 @@ launch(Swing) {
   -->例如，[用例](#用例)所示的跟在 `launch` , `future` , 和 `BuildSequence` 函数后面花括号里的代码块<!--
   -->就是挂起 lambda 表达式。
 
-  > 注意：挂起 lambda 表达式可以在其代码的任意位置调用挂起函数，只要这个位置能写从这个 lambda 表达式<!--
+  > 注意：挂起 lambda 表达式可以在其代码的任意位置调用挂起函数，只要这个位置能编写从这个 lambda 表达式<!--
   -->[非局部](https://kotlinlang.org/docs/reference/returns.html) `return` 的语句。<!--
   -->也就是说，可以在像 [`apply{}` 代码块](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/apply.html)<!--
   -->这样的内联 lambda 表达式中调用挂起函数，<!--
@@ -360,9 +360,9 @@ launch(Swing) {
   -->符合上述函数类型。
 
 * *协程构建器*——使用一些挂起 lambda 表达式作为参数来创建一个协程的函数，<!--
-  -->可能还提供某种形式以访问协程的结果。例如，[用例](#用例)中的 `launch{}`、`future{}` <!--
+  -->并且可选地，还提供某种形式以访问协程的结果。例如，[用例](#用例)中的 `launch{}`、`future{}` <!--
   -->以及 `sequence{}` 就是协程构建器。<!--
-  -->标准库提供了用于定义其他所有协程构建器所使用的基础协程构建器。
+  -->标准库提供了用于定义其他所有协程构建器所使用的原始协程构建器。
 
   > 注意：一些语言通过对特定方法的硬编码支持协程的创建、启动、<!--
   -->定义其执行的方式以及结果的表示方式。例如，`generate` *关键字*可以定义<!--
@@ -401,7 +401,7 @@ launch(Swing) {
 如上所述，驱动协程的要求之一是灵活性：<!--
 -->我们希望能够支持许多现有的异步应用程序接口以及其他用例，并尽量减少<!--
 -->硬编码到编译器中的部分。因此，编译器只负责支持<!--
--->挂起函数、挂起 lambda 表达式和相应的挂起函数类型。<!--
+-->挂起函数、挂起 lambda 表达式以及相应的挂起函数类型。<!--
 -->标准库中的原语很少，其余的则留给应用程序库。
 
 ### 续体接口
@@ -464,7 +464,7 @@ doSomethingAsync(...).await()
 
 > 属性的取值器和设值器、构造函数以及某些操作符函数<!--
 -->（也就是 `getValue`，`setValue`，`provideDelegate`，`get`，`set` 以及 `equals`）不能带有 `suspend` 修饰符。<!--
--->这些限制将来可能会被消除。
+-->这些限制将来可能会被移除。
 
 挂起函数可以调用任何常规函数，但要真正挂起执行，必须<!--
 -->调用一些其他的挂起函数。特别是，这个 `await` 实现调用了<!--
@@ -476,14 +476,14 @@ doSomethingAsync(...).await()
 suspend fun <T> suspendCoroutine(block: (Continuation<T>) -> Unit): T
 ```
 
-当  `suspendCoroutine` 在一个协程中被调用时（它*只*可能在协程中<!--
+当 `suspendCoroutine` 在一个协程中被调用时（它*只*可能在协程中<!--
 -->被调用，因为它是一个挂起函数），它捕获了协程的执行状态<!--
--->到一个*续体*实例，然后将其传给指定的 `block` 作为参数。<!--
+-->到一个*续体*实例，然后将其作为参数传递给指定的 `block`。<!--
 -->为了恢复协程的执行，代码块需要在该线程或稍后在其他某个线程中调用 `continuation.resumeWith()`<!--
 -->（直接调用 `continuation.resume()` 或 `continuation.resumeWithException()` 扩展）。<!--
 --><!--
--->*实际*的协程挂起发生在当 `suspendCoroutine` 代码块没有调用 `resumeWith` 就返回时。<!--
--->如果协程还未从代码块返回就直接被恢复，<!--
+-->当 `suspendCoroutine` 代码块没有调用 `resumeWith` 就返回时，会发生*实际*的协程挂起。<!--
+-->如果续体还未从代码块返回就直接被恢复，<!--
 -->协程就不被看作已经暂停又继续执行。
 
 传给 `continuation.resumeWith()` 的值作为调用 `suspendCoroutine` 的结果，<!--
@@ -494,7 +494,7 @@ suspend fun <T> suspendCoroutine(block: (Continuation<T>) -> Unit): T
 > 注意：这正是 Kotlin 协程与像 Scheme 这样的函数式语言中的顶层限定续体<!--
 -->或 Haskell 中的续体单子的关键区别。我们选择仅支持续体恢复一次，<!--
 -->完全是出于实用主义考虑，因为所有这些预期的[用例](#用例)都不需要多重续体。<!--
--->然而，还是可以在另外的库中实现多重续体，<!--
+-->然而，还是可以在单独的库中实现多重续体，<!--
 -->通过底层的所谓[协程内建函数](#协程内建函数)复制续体中<!--
 -->捕获的协程状态，然后就可以从这个副本再次恢复协程。
 
@@ -517,25 +517,25 @@ fun launch(context: CoroutineContext = EmptyCoroutineContext, block: suspend () 
 > 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/run/launch.kt)获取代码。
 
 这个实现使用了 [`Continuation(context) { ... }`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-continuation.html) <!--
--->函数（来自 `kotlin.coroutines` 包），它提供了一种<!--
--->简写以实现包含其给定的 `context` 值以及 `resumeWith` 函数体的<!--
---> `Continuation` 接口。这个续体作为*完结续体*被传给 <!--
--->[`block.startCoroutine(...)`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/start-coroutine.html) 扩展函数<!--
+-->函数（来自 `kotlin.coroutines` 包），该函数提供了<!--
+-->实现 `Continuation` 接口的快捷方式，该接口具有其 `context` 的给定值和
+`resumeWith` 函数的主体。这个续体作为*完结续体*被传递给
+[`block.startCoroutine(...)`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/start-coroutine.html) 扩展函数<!--
 -->（来自 `kotlin.coroutines` 包）。
 
-协程在完结时将调用其*完结续体*。其 `resumeWith` <!--
--->函数将在协程因成功或失败而*完结*时调用。<!--
+协程在完结时将调用其*完结续体*。其 `resumeWith`
+函数将在协程因成功或失败而*完结*时调用。<!--
 -->因为 `launch` 是那种“即发即弃”式的<!--
--->协程，它被定义成返回 `Unit` 的挂起函数，实际上是无视了<!--
--->其 `resume` 函数的结果。如果协程因异常完结，<!--
+-->协程，它被定义成返回 `Unit` 的挂起函数，实际上是忽略了
+`resume` 函数的结果。如果协程因异常完结，<!--
 -->当前线程的未捕获异常句柄将用于报告这个异常。
 
-> 注意：这个简单实现返回了 `Unit` ，根本不提供对协程状态的任何访问。<!--
+> 注意：这个简单实现返回了 `Unit` 并且根本不提供对协程状态的任何访问。<!--
 -->实际上在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实现要更加<!--
--->复杂，因为它返回了一个 `Job` 接口的实例，代表这个协程，而且可以被取消。
+-->复杂，因为它返回了一个代表这个协程的 `Job` 接口的实例，而且可以被取消。
 
 上下文在[协程上下文](#协程上下文)一节中详细介绍。<!--
--->`startCoroutine` 在标准库中是无参和<!--
+-->`startCoroutine` 在标准库中定义为无参数和<!--
 -->单参数的挂起函数类型的扩展函数：
 
 ```kotlin
@@ -556,15 +556,15 @@ fun <R, T> (suspend  R.() -> T).startCoroutine(receiver: R, completion: Continua
 协程上下文是一组可以附加到协程中的持久化用户定义对象。<!--
 -->它可以包括负责协程线程策略的对象，日志，关于协程执行的安全性和事务方面的对象，<!--
 -->协程的标识和名称等等。下面是协程及其上下文的简单认识模型。<!--
--->把协程看作一个轻量线程。在这种情况下，协程上下文就像是一堆线程局部化变量。<!--
--->不同之处在线程局部化变量是可变的，协程上下文是不可变的，<!--
+-->把协程看作一个轻量线程。在这种情况下，协程上下文就像是线程局部变量的集合。<!--
+-->不同之处在线程局部变量是可变的，协程上下文是不可变的，<!--
 -->但对于协程这并不是一个严重的限制，因为他们是如此轻量<!--
 -->以至于当需要改变上下文时可以很容易地开启一个新的协程。
 
 标准库没有包含上下文的任何具体实现，<!--
 -->但是有接口和抽象类，以便以*可组合*的方式<!--
 -->在库中定义所有这些方面，因此来自不同库的各个方面可以<!--
--->和平共存在同一个上下文中。
+-->在同一个上下文中和平共存。
 
 从概念上讲，协程上下文是一组索引元素，其中每个元素有唯一的键。<!--
 -->它是 set 与 map 的混合体。它的元素有像在 map 中的那样的键，但它的键直接与元素关联，<!--
@@ -607,22 +607,22 @@ interface CoroutineContext {
 -->那是仅有这一个元素的上下文单例。<!--
 -->这样就可以通过获取库定义的协程上下文元素并使用 `+` 连接它们，<!--
 -->来创建一个复合上下文。例如，如果一个库定义的 `auth` 元素带着用户授权信息，<!--
--->其他库定义的 `threadPool` 对象带着一些协程执行信息，<!--
--->你就可以使用[协程构建器](#协程构建器) `launch{}` 建造使用组合上下文的 <!--
--->`launch(auth + CommonPool){...}` 调用。
+-->而另一些库定义了带有一些带有上下文执行信息的 `threadPool` 对象，<!--
+-->你就可以使用[协程构建器](#协程构建器) `launch{}` 使用组合上下文使用
+`launch(auth + CommonPool){...}` 调用。
 
 > 注意： [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 提供了几个上下文元素，<!--
--->包括用于在一个共享后台线程池中调度协程的 `Dispatchers.Default`。
+-->包括用于在一个共享后台线程池中调度协程的 `Dispatchers.Default` 对象。
 
 标准库提供 <!--
--->[`EmptyCoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-empty-coroutine-context/index.html) <!--
--->—— 一个不包含任何元素的（空的） `CoroutineContext` 实例。
+-->[`EmptyCoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-empty-coroutine-context/index.html)
+——一个不包含任何元素的（空的）`CoroutineContext` 实例。
 
 所有第三方协程元素应该继承标准库的 <!--
 -->[`AbstractCoroutineContextElement`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-abstract-coroutine-context-element/index.html) <!--
 -->类（位于 `kotlinx.coroutines` 包）。<!--
 -->要在库中定义上下文元素，建议使用以下风格。<!--
--->下面的这个例子显示了一个假想的储存当前用户名的授权上下文元素：
+-->以下示例展示了存储当前用户名的假设授权上下文元素：
 
 ```kotlin
 class AuthUser(val name: String) : AbstractCoroutineContextElement(AuthUser) {
