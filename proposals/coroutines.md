@@ -556,7 +556,7 @@ fun <R, T> (suspend  R.() -> T).startCoroutine(receiver: R, completion: Continua
 协程上下文是一组可以附加到协程中的持久化用户定义对象。<!--
 -->它可以包括负责协程线程策略的对象，日志，关于协程执行的安全性和事务方面的对象，<!--
 -->协程的标识和名称等等。下面是协程及其上下文的简单认识模型。<!--
--->把协程看作一个轻量线程。在这种情况下，协程上下文就像是线程局部变量的集合。<!--
+-->把协程看作一个轻量线程。在这种情况下，协程上下文就像是一组线程局部变量。<!--
 -->不同之处在线程局部变量是可变的，协程上下文是不可变的，<!--
 -->但对于协程这并不是一个严重的限制，因为他们是如此轻量<!--
 -->以至于当需要改变上下文时可以很容易地开启一个新的协程。
@@ -568,8 +568,8 @@ fun <R, T> (suspend  R.() -> T).startCoroutine(receiver: R, completion: Continua
 
 从概念上讲，协程上下文是一组索引元素，其中每个元素有唯一的键。<!--
 -->它是 set 与 map 的混合体。它的元素有像在 map 中的那样的键，但它的键直接与元素关联，<!--
--->更像是 set。标准库定义了 <!--
--->[`CoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/index.html) 的最小接口<!--
+-->更像是 set。标准库定义了
+[`CoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-coroutine-context/index.html) 的最小接口<!--
 -->（位于 `kotlinx.coroutines` 包）：
 
 ```kotlin
@@ -611,15 +611,15 @@ interface CoroutineContext {
 -->你就可以使用[协程构建器](#协程构建器) `launch{}` 使用组合上下文使用
 `launch(auth + CommonPool){...}` 调用。
 
-> 注意： [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 提供了几个上下文元素，<!--
+> 注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 提供了几个上下文元素，<!--
 -->包括用于在一个共享后台线程池中调度协程的 `Dispatchers.Default` 对象。
 
-标准库提供 <!--
--->[`EmptyCoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-empty-coroutine-context/index.html)
+标准库提供
+[`EmptyCoroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-empty-coroutine-context/index.html)
 ——一个不包含任何元素的（空的）`CoroutineContext` 实例。
 
-所有第三方协程元素应该继承标准库的 <!--
--->[`AbstractCoroutineContextElement`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-abstract-coroutine-context-element/index.html) <!--
+所有第三方协程元素应该继承标准库的
+[`AbstractCoroutineContextElement`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/-abstract-coroutine-context-element/index.html) <!--
 -->类（位于 `kotlinx.coroutines` 包）。<!--
 -->要在库中定义上下文元素，建议使用以下风格。<!--
 -->以下示例展示了存储当前用户名的假设授权上下文元素：
@@ -868,13 +868,13 @@ interface SequenceScope<in T> {
 挂起函数通过 Continuation-Passing-Style (CPS) 实现。<!--
 -->每个挂起函数和挂起 lambda 表达式都有一个附加的 `Continuation` 参数，<!--
 -->在调用时隐式传入。回想一下，<!--
--->[`await` 挂起函数](#挂起函数) 的声明是这样的：
+-->[`await` 挂起函数](#挂起函数)的声明是这样的：
 
 ```kotlin
 suspend fun <T> CompletableFuture<T>.await(): T
 ```
 
-然而在*CPS 变换*之后，它的实际*实现*具有具有以下签名：
+然而在 *CPS 变换*之后，它的实际*实现*具有以下签名：
 
 ```kotlin
 fun <T> CompletableFuture<T>.await(continuation: Continuation<T>): Any?
@@ -882,8 +882,8 @@ fun <T> CompletableFuture<T>.await(continuation: Continuation<T>): Any?
 
 其返回类型 `T` 移到了附加的续体参数的类型参数位置。<!--
 -->实现中的返回值类型 `Any?` 被设计用于表示挂起函数的动作。<!--
--->当挂起函数*挂起*协程时，函数返回一个特别的标识值 <!--
--->`COROUTINE_SUSPENDED`（更多细节参考[`协程内建函数`](#协程内建函数)一节）。<!--
+-->当挂起函数*挂起*协程时，函数返回一个特别的标识值
+`COROUTINE_SUSPENDED`（更多细节参考[`协程内建函数`](#协程内建函数)一节）。<!--
 -->如果一个挂起函数没有挂起协程，<!--
 -->协程继续执行时，它直接返回一个结果或者抛出一个异常。<!--
 -->这样，`await` 函数实现中的返回值类型 `Any?` 实际上是 `T` 和 `COROUTINE_SUSPENDED` 的联合类型，<!--
@@ -903,7 +903,7 @@ fun <T> CompletableFuture<T>.await(continuation: Continuation<T>): Any?
 -->编译器也只创建一个类。
 
 主要思想：挂起函数编译为状态机，其状态对应着挂起点。<!--
--->示例：弄一个有两个挂起点的挂起代码块：
+-->示例：编写一个有两个挂起点的挂起代码块：
 
 ```kotlin
 val a = a()
@@ -966,15 +966,15 @@ lass <anonymous_for_state_machine> extends SuspendLambda<...> {
 }    
 ```
 
-请注意，这里有 `goto` 运算符，还有标签，因为该例子描述的变化发生在<!--
+请注意，这里有 `goto` 操作符，还有标签，因为该示例描述的变化发生在<!--
 -->字节码中而不是源码中。
 
 现在，当协程开始时，我们调用了它的 `resumeWith()` —— `label` 是 `0`，<!--
--->然后我们跳去 `L0`，接着我们做一些工作，将 `label` 设为下一个状态 —— `1`，调用 `.await()`，<!--
+-->然后我们跳去 `L0`，接着我们做一些工作，将 `label` 设为下一个状态—— `1`，调用 `.await()`，<!--
 -->如果协程执行挂起就返回。<!--
--->当我们想继续执行时，我们再次调用 `resumeWith()`，现在它继续到了 <!--
--->`L1`，做一些工作，将状态设为 `2`，调用 `.await()`，同样在挂起时返回。<!--
--->下一次它从 `L3` 继续，将状态设为 `-1`，这意味着 <!--
+-->当我们想继续执行时，我们再次调用 `resumeWith()`，现在它继续执行到了
+`L1`，做一些工作，将状态设为 `2`，调用 `.await()`，同样在挂起时返回。<!--
+-->下一次它从 `L3` 继续，将状态设为 `-1`，这意味着<!--
 -->"结束了，没有更多工作要做了"。
 
 循环内的挂起点只生成一个状态，<!--
@@ -1026,8 +1026,8 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 挂起函数代码在编译后的样子取决于它调用其他挂起函数的方式和时间。<!--
 -->最简单的情况是一个挂起函数只在其*末尾*调用其他挂起函数，<!--
 -->这称作对它们的*尾调用*。对于那些实现底层同步原语或者<!--
--->包装回调函数的协程来说，这是典型的方式，就像[挂起函数](#挂起函数)一节<!--
--->和[包装回调](#包装回调)一节展示的那样。这些函数在末尾<!--
+-->包装回调函数的协程来说，这是典型的方式，就像[挂起函数](#挂起函数)小节<!--
+-->和[包装回调](#包装回调)小节展示的那样。这些函数在末尾<!--
 -->像调用 `suspendCoroutine` 那样调用其他挂起函数。编译这种挂起函数就和编译普通的非挂起函数一样，<!--
 -->唯一的区别是通过 [CPS 转换](#续体传递风格)拿到的隐式续体参数<!--
 -->会在尾调用中传递给下一个挂起函数。
@@ -1036,7 +1036,7 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 -->[状态机](#状态机)。状态机的实例<!--
 -->在挂起函数调用时创建，在挂起函数完结时丢弃。
 
-> 注意：以后的版本中编译策略可能会优化成<!--
+> 注意：在未来的版本中编译策略可能会优化成<!--
   -->在第一个挂起点生成状态机实例。
 
 反过来，不在尾部调用其他挂起函数时，这个状态机又充当了*完结续体*。<!--
@@ -1044,14 +1044,14 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
 -->状态机实例会被更新并重用。<!--
 -->对比其他[异步编程风格](#异步编程风格)，<!--
 -->（其他异步编程风格中）异步过程的每个后续步骤通常使用单独的、新分配的<!--
--->闭包。
+-->闭包来实现。
 
 ### 协程内建函数
 
 Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许多<!--
 -->声明，但应当谨慎使用，因为这些声明暴露了协程机制的内部实现细节。<!--
--->本节将解释这些细节。这些声明不应在通常的代码中使用，所以 <!--
--->`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用<!--
+-->本节将解释这些细节。这些声明不应在通常的代码中使用，所以
+`kotlin.coroutines.intrinsics` 包在 IDE 的自动补全中是被隐藏的。要使用<!--
 -->这些声明，你必须手动把对应的 import 语句添加到源码文件：
 
  ```kotlin
@@ -1059,7 +1059,7 @@ Kotlin 标准库提供了 `kotlin.coroutines.intrinsics` 包，其中包含许�
  ```
  
 标准库中的 `suspendCoroutine` 挂起函数的实际实现使用了 Kotlin 本身来编写，<!--
--->其源代码作为标准库源码包的一部分，是可见的。为了<!--
+-->其源代码作为标准库源码包的一部分是可见的。为了<!--
 -->安全、无问题地使用协程，它在协程每次挂起时将状态机的实际续体<!--
 -->包装在一个附加对象中。这对于<!--
 -->[异步计算](#异步计算)和 [Future](#Future) 等真正的异步用例来说非常好，因为<!--
@@ -1077,30 +1077,30 @@ suspend fun <T> suspendCoroutineUninterceptedOrReturn(block: (Continuation<T>) -
 
 它提供了对挂起函数的[续体传递风格](#续体传递风格)的直接访问，<!--
 -->并且暴露了对*未拦截*的续体的引用。后者意味着 `Continuation.resumeWith` 的调用<!--
--->可以不通过 [续体拦截器](#续体拦截器)。它可以用于<!--
+-->可以不通过[续体拦截器](#续体拦截器)。它可以用于<!--
 -->编写[受限挂起](#受限挂起)的同步协程，因为这种协程不能安装<!--
 -->续体拦截器（这又是因为它们的上下文始终为空），或者<!--
 -->用在能确定当前执行线程就在所需的上下文中时（因为这时候也没必要拦截）。<!--
--->否则，应使用 <!--
--->[`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html) <!--
--->扩展函数（位于 `kotlin.coroutines.intrinsics` 包）获取被拦截的续体:
+-->否则，应使用
+[`intercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/intercepted.html) <!--
+-->扩展函数（位于 `kotlin.coroutines.intrinsics` 包）获取被拦截的续体：
 
 ```kotlin
 fun <T> Continuation<T>.intercepted(): Continuation<T>
 ```
 
-此外，还应该在被*拦截*到的续体上调用 `Continuation.resumeWith`。
+并且还应该在被*拦截*到的续体上调用 `Continuation.resumeWith`。
 
-这时，如果协程确实挂起了，传递给 `suspendCoroutineUninterceptedOrReturn` 函数的 `block` 将返回 <!--
--->[`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html)<!--
+这时，如果协程确实挂起了，传递给 `suspendCoroutineUninterceptedOrReturn` 函数的 `block` 将返回
+[`COROUTINE_SUSPENDED`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/-c-o-r-o-u-t-i-n-e_-s-u-s-p-e-n-d-e-d.html)<!--
 -->（这种情况下，稍后对 `Continuation.resumeWith` 的调用应该有且仅有一次），否则，<!--
--->返回结果的值 `T` 或抛出一个异常（无论值还是异常，不能再调用 `Continuation.resumeWith` 了）。
+-->返回结果的值 `T` 或抛出一个异常（无论值还是异常，都不能再调用 `Continuation.resumeWith` 了）。
 
-当使用 `suspendCoroutineUninterceptedOrReturn` 时，如果不遵守这一惯例，将导致难以跟踪错误，<!--
+当使用 `suspendCoroutineUninterceptedOrReturn` 时，如果不遵守这一惯例，将导致难以跟踪的错误，<!--
 -->而且与通过测试找到并复现错误的努力背道而驰。<!--
 -->对于类似 `buildSequence`/`yield` 的协程来说，这种约定通常很容易遵循，<!--
--->但是**不建议**基于 `suspendCoroutineUninterceptedOrReturn` 编写类似异步 `await` 的挂起函数，因为如果没有 <!--
--->`suspendCoroutine` 的帮助，正确实现它们是**极难**的。
+-->但是**不建议**基于 `suspendCoroutineUninterceptedOrReturn` 编写类似异步 `await` 的挂起函数，因为如果没有
+`suspendCoroutine` 的帮助，正确实现它们是**极难**的。
 
 另有一些名为 <!--
 -->[`createCoroutineUnintercepted`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.intrinsics/create-coroutine-unintercepted.html) <!--
@@ -1114,7 +1114,7 @@ fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, complet
  
 它们的工作方式类似于 `createCoroutine` 但会返回对未拦截的初始续体的引用。<!--
 -->类似于 `suspendCoroutineUninterceptedOrReturn`，它可用于同步协程以获得更好的性能。<!--
--->例如，下面是用 `createCoroutineUnintercepted` 优化过的 `sequence{}` 构建器：
+-->例如，下面是 `sequence{}` 使用 `createCoroutineUnintercepted` 优化过的版本：
  
 ```kotlin
 fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
@@ -1124,7 +1124,7 @@ fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequ
 }
 ```
 
-下面是 `yield` 用 `suspendCoroutineUninterceptedOrReturn` 优化过的版本。<!--
+下面是 `yield` 使用 `suspendCoroutineUninterceptedOrReturn` 优化过的版本。<!--
 -->注意，因为 `yield` 必定要挂起，对应的代码块也必定返回 `COROUTINE_SUSPENDED`。
 
 ```kotlin
