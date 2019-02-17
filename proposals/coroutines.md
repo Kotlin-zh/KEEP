@@ -47,7 +47,7 @@
   * [异步编程风格](#异步编程风格)
   * [包装回调](#包装回调)
   * [构建 Future](#构建-Future)
-  * [非阻塞睡眠](#非阻塞睡眠)
+  * [非阻塞休眠](#非阻塞休眠)
   * [协作式单线程多任务](#协作式单线程多任务)
   * [异步序列](#异步序列)
   * [通道](#通道)
@@ -56,11 +56,11 @@
   * [参考](#参考)
   * [反馈](#反馈)
 * [版本历史](#版本历史)
-  * [3.3 版中的改动](#3.3-版中的改动)
-  * [3.2 版中的改动](#3.2-版中的改动)
-  * [3.1 版中的改动](#3.1-版中的改动)
-  * [3 版中的改动](#3-版中的改动)
-  * [2 版中的改动](#2-版中的改动)
+  * [3.3 版本中的改动](#3.3-版本中的改动)
+  * [3.2 版本中的改动](#3.2-版本中的改动)
+  * [3.1 版本中的改动](#3.1-版本中的改动)
+  * [3 版本中的改动](#3-版本中的改动)
+  * [2 版本中的改动](#2-版本中的改动)
 
 ## 用例
 
@@ -1173,14 +1173,14 @@ suspend fun doSomething() = suspendCoroutineUninterceptedOrReturn { cont ->
 
 ### 资源管理与垃圾收集
 
-协程不使用堆外存储，也不自行消耗任何本机资源，除非<!--
+协程不使用堆外存储，也不自行消耗任何本地资源，除非<!--
 -->在协程中运行的代码打开了文件或占用了其他资源。在协程中打开的文件必然<!--
 -->要以某种方式关闭，这不意味着协程本身需要关闭。当协程挂起时，其状态<!--
 -->可以通过对其续体的引用来获取。如果你失去了对挂起协程续体的引用，<!--
 -->最终它会被垃圾收集器回收。
 
 打开了可关闭资源的协程应该特别关注。考虑下面这个<!--
--->[受限挂起](#受限挂起)一节中使用 `sequence{}` 构建器从文件生成<!--
+-->[受限挂起](#受限挂起)小节中使用 `sequence{}` 构建器从文件生成<!--
 -->行序列的协程：
 
 ```kotlin
@@ -1201,7 +1201,7 @@ sequenceOfLines("https://github.com/kotlin/kotlin-coroutines-examples/tree/maste
     .forEach(::println)
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/sequenceOfLines.kt)获取完整代码
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/sequence/sequenceOfLines.kt)获取完整代码
 
 只要你遍历 `sequenceOfLines` 函数返回的整个序列，它就工作正常。<!--
 -->然而，如果你只打印了文件的前几行，就像这样：
@@ -1215,24 +1215,24 @@ sequenceOfLines("https://github.com/kotlin/kotlin-coroutines-examples/tree/maste
 协程恢复了几次，产生出文件的前三行，然后就被*遗弃*了。<!--
 -->遗弃对于协程本身来说没什么关系，但是对于打开了的文件则不然。<!--
 -->[`use` 函数](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.io/use.html)<!--
--->没有机会结束调用并关闭文件。文件会一直开着，<!--
--->直到被垃圾收集器回收，因为 Java 的文件操作有个 `finalizer` 能关闭文件。<!--
--->如果只是个幻灯片或者短时间运行的小工具，这倒也不是什么问题，但是对于那些大型后端系统来说可就是个灾难了，<!--
--->因为它们有几十亿字节的堆存储，<!--
--->以至于在耗尽内存触发垃圾收集之前文件句柄先溢出了。
+-->没有机会结束调用并关闭文件。文件会一直处于开启状态，<!--
+-->直到被垃圾收集器回收，因为 Java 文件有个能关闭文件的 `finalizer`。<!--
+-->如果只是个幻灯片或者短时间运行的小工具，这倒也不是什么问题，但是对于那些有数 GB 堆容量的大型后端系统来说，<!--
+-->可就是个灾难了，<!--
+-->它可能会快速耗尽打开文件句柄会而不是耗尽内存触发垃圾收集。
 
-这个问题和 Java 里<!--
--->生成行的惰性流的 [`Files.lines`](https://docs.oracle.com/javase/8/docs/api/java/nio/file/Files.html#lines-java.nio.file.Path-) <!--
--->方法遇到的问题一样。它返回一个可关闭的 Java 流，但多数流操作不会<!--
--->自动调用对应的 <!--
--->`stream.close` 方法，需要用户自己记着关闭流。<!--
--->Kotlin 里也可以定义需要关闭的序列生成器，<!--
+这个问题和 Java
+中生成行的惰性流的 [`Files.lines`](https://docs.oracle.com/javase/8/docs/api/java/nio/file/Files.html#lines-java.nio.file.Path-)
+方法遇到的问题一样。它返回一个可关闭的 Java 流，但多数流操作不会<!--
+-->自动调用对应的
+`stream.close` 方法，需要用户自己记着关闭流。<!--
+-->Kotlin 中也可以定义需要关闭的序列生成器，<!--
 -->但也会遇到同一个问题，就是语言没有什么自动机制能<!--
 -->保证它们在用完之后关闭。引入一种自动化资源管理的语言机制<!--
 -->明显超出了 Kotlin 协程的领域。
 
 然而，通常这个问题不会影响协程的异步用例。异步协程是<!--
--->不会被遗弃的，它会持续运行直到完毕。因此只要协程里的代码能正确地关闭<!--
+-->不会被遗弃的，它会持续运行直到完毕。因此只要协程中的代码能正确地关闭<!--
 -->其资源，资源最终就会被关闭。
 
 ### 并发和线程
@@ -1250,13 +1250,13 @@ launch { // 启动协程
 }
 ```
 
-在协程的作用域里，你可以随意使用那些普通的非线程安全的可变结构。<!--
+在协程的作用域里，你可以随意使用那些普通的单线程的可变结构。<!--
 -->然而，在协程*之间*共享可变状态仍可能带来致命威胁。如果你使用了<!--
 -->一个指定调度器的协程构建器，以 JS 风格在单一事件调度线程上恢复协程，<!--
 -->就像[续体拦截器](#续体拦截器)一节展示的 `Swing` 拦截器那样，<!--
 -->那你还是能安全地操作所有共享对象，<!--
 -->因为它们总在事件调度线程上修改。<!--
--->但如果你在多线程环境中，或者需要在<!--
+-->但如果你在多线程环境中，或者需要<!--
 -->运行在不同线程上的多个协程之间共享可变状态，你就必须使用线程安全（并发）的数据结构。
 
 协程在这方面和线程没有什么不同，尽管协程确实更轻。你可以在仅仅几个线程上<!--
@@ -1267,10 +1267,10 @@ launch { // 启动协程
 
 ### 异步编程风格
 
-异步编程有多种风格。
+异步编程有多种不同的风格。
 
-[异步计算](#异步计算)一节已经讨论了回调函数，这也是协程风格通常<!--
--->用来替换的最不方便的一种风格。任何回调风格的应用程序接口都可以<!--
+[异步计算](#异步计算)一节已经讨论了回调函数，这通常也是协程被设计出来<!--
+-->替换的最不方便的一种风格。任何回调风格的应用程序接口都可以<!--
 -->用对应的挂起函数包装，见[这里](#包装回调)。
 
 我们来回顾一下。假设你现在有一个带有以下签名的*阻塞* `sendMail` 函数：
@@ -1282,18 +1282,18 @@ fun sendEmail(emailArgs: EmailArgs): EmailResult
 
 它在运行时可能会阻塞执行线程很长的时间。
 
-要使其不阻塞，可以使用错误先行的 <!--
--->[node.js 回调约定](https://www.tutorialspoint.com/nodejs/nodejs_callbacks_concept.htm)，<!--
+要使其不阻塞，可以使用错误优先的
+[node.js 回调约定](https://www.tutorialspoint.com/nodejs/nodejs_callbacks_concept.htm)，<!--
 -->以回调风格表示其非阻塞版本，签名如下：
 
 ```kotlin
 fun sendEmail(emailArgs: EmailArgs, callback: (Throwable?, EmailResult?) -> Unit)
 ```
 
-但是，协程还能支持其他风格的异步非阻塞编程。其中之一<!--
--->是内置于许多流行语言中的 async/await 风格。<!--
+然而，协程还能支持其他风格的异步非阻塞编程。其中之一<!--
+-->是内置于许多广受欢迎的语言中的 async/await 风格。<!--
 -->在 Kotlin 中，可以通过引入 `future{}` 和 `.await()` 库函数<!--
--->来重现这种风格，就像用例中的 [future](#Future) 部分所示。
+-->来重现这种风格，就像用例中的 [future](#Future) 小节所示。
 
 这种风格主张从函数返回对未来对象的某种约定，<!--
 -->而不是传入回调函数作为参数。在这种异步风格中，`sendEmail` 的签名看起来是这样：
@@ -1302,15 +1302,15 @@ fun sendEmail(emailArgs: EmailArgs, callback: (Throwable?, EmailResult?) -> Unit
 fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult>
 ```
 
-作为一种风格，最好给这方法的名字加上一个 Async 后缀，因为它们的<!--
--->参数和阻塞版本没什么不同，因而很容易犯忘记其操作的<!--
--->异步本质的错误。函数 `sendEmailAsync` 启动一个*并发*异步的操作，<!--
+作为一种风格，将 Async 后缀添加到此类方法名称是一个好习惯，因为它们的<!--
+-->参数和阻塞版本没什么不同，因而很容易犯忘记其本质是<!--
+-->异步操作的错误。函数 `sendEmailAsync` 启动一个*并发*异步的操作，<!--
 -->可能带来并发的所有陷阱。然而，鼓励这种风格的编程语言<!--
 -->通常也提供某种 `await` 原语，在需要的时候把操作重新变回顺序的。
 
 Kotlin 的*原生*编程风格基于挂起函数。在这种风格下，`sendEmail` 的签名<!--
--->看起来比较自然，不修改其参数或返回类型，而是增加了一个 <!--
--->`suspend` 修饰符：
+-->看起来比较自然，不修改其参数或返回类型，而是增加了一个
+`suspend` 修饰符：
 
 ```kotlin
 suspend fun sendEmail(emailArgs: EmailArgs): EmailResult
@@ -1326,7 +1326,7 @@ fun sendEmailAsync(emailArgs: EmailArgs): Future<EmailResult> = future {
 }
 ```
 
-`sendEmailAsync` 用上 [`.await()` 挂起函数](#挂起函数)也能实现挂起函数 `sendEmail`：
+`sendEmailAsync` 使用 [`.await()` 挂起函数](#挂起函数)也能实现挂起函数 `sendEmail`：
 
 
 ```kotlin
@@ -1357,43 +1357,43 @@ fun largerBusinessProcessAsync() = future {
 }
 ```
 
-显然，异步风格的函数使用写法更冗长，更容易出错。<!--
+显然，异步风格的函数结构更冗长，更容易出错。<!--
 -->如果在异步风格的示例中省略了 `.await()` 调用，<!--
--->代码仍然可以编译并工作，但现在它将异步发送电子邮件，<!--
--->甚至在执行较大业务流程的其余部分的*同时*发送电子邮件，<!--
+-->代码仍然可以编译并工作，但现在它通过发送电子邮件来处理异步，<!--
+-->*同时*甚至在执行其余更大的业务流程，<!--
 -->因此可能会修改某些共享状态并引入一些非常难以重现的错误。<!--
 -->相反，挂起函数是*默认顺序*的。<!--
 -->对于挂起的函数，无论何时需要任何并发，都可以在代码中通过调用<!--
 -->某种 `future{}` 或类似的协程构建器显式地表达。
 
-从在使用多个库的大型项目中的**扩展性**比较。挂起函数是 <!--
+从使用多个库的大型项目的**规模**来比较这些风格。挂起函数是 <!--
 -->Kotlin 的一个轻量级语言概念。所有挂起函数在任何非限定性的 Kotlin 协程中都是完全可用的。<!--
--->async 风格的函数依赖于框架。每个 promises/futures 框架都必须定义自己的类-`async` 函数，<!--
--->该函数返回自己的 promise/future 类，这些类又有对应的类-`async` 函数。
+-->async 风格的函数依赖于框架。每个 promises/futures 框架都必须定义自己的——类`async` 函数，<!--
+-->该函数返回自己的 promise/future 类，这些类又有对应的——类 `async` 函数。
 
 从**性能**比较。挂起函数拥有最小的调用开销。<!--
--->你可以看[实现细节](#实现细节)一节。<!--
+-->你可以查看[实现细节](#实现细节)小节。<!--
 -->除了必要的挂起机制之外，async 风格的函数需要额外维护相当重的 promise/future 抽象。<!--
 -->async 风格的函数调用必须返回一些类似 future 的实例对象，并且即使函数非常简短，<!--
--->也无法将其优化掉。异步样式不太适合于粒度非常细的分解。
+-->也无法将其优化。异步风格不太适合于粒度非常细的分解。
 
 从与 JVM/JS 代码的**互操作性**比较。async 风格的函数与 JVM/JS 代码更具互操作性，<!--
 -->因为这类代码的类型系统匹配 future 的抽象。在 Java 或 JS 中，它们只是返回<!--
 -->类似 future 的对象的函数。对任何不原生支持<!--
 -->[续体传递风格](#续体传递风格)的语言来说，挂起函数都很奇怪。<!--
--->但是从上面的示例中可以看出，对于任何给定的 promise/future 框架都很容易将任何挂起函数转换为 <!--
--->async 风格的函数。因此，只要用 Kotlin 编写一次挂起函数，<!--
+-->然而，从上面的示例中可以看出，对于任何给定的 promise/future 框架都很容易将任何挂起函数转换为
+async 风格的函数。因此，只要用 Kotlin 编写一次挂起函数，<!--
 -->然后使用适当的 `future{}` 协程构建器函数通过一行代码对其进行调整，<!--
 -->就能实现与任何形式的 promise/future 的互操作性。
 
 ### 包装回调
 
 很多异步应用程序接口集包含回调风格的接口。标准库中的<!--
--->挂起函数 `suspendCoroutine`（见[挂起函数](#挂起函数)一节）<!--
+-->挂起函数 `suspendCoroutine`（见[挂起函数](#挂起函数)小节）<!--
 -->提供了一种简单的把任何回调函数包装成 Kotlin 挂起函数的方法。
 
 这里有一个简单的例子。有一个简单的模式。假设你有一个带有回调的 `someLongComputation` 函数，<!--
--->回调接收的参数 `Value` 是计算的结果。
+-->回调接收一些作为计算的结果的 `Value`。
 
 ```kotlin
 fun someLongComputation(params: Params, callback: (Value) -> Unit)
@@ -1407,21 +1407,21 @@ suspend fun someLongComputation(params: Params): Value = suspendCoroutine { cont
 } 
 ```
 
-现在计算的返回值变成显式的了，但它还是异步的，也不会阻塞线程。
+现在计算的返回值变成显式的了，但它仍然是异步的，且不会阻塞线程。
 
 > 注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 包含了一个<!--
   -->协作式可取消协程框架。它提供类似 `suspendCoroutine`，<!--
   -->但支持取消的 `suspendCancellableCoroutine` 函数。查看<!--
-  -->其指南中[取消与超时时](https://www.kotlincn.net/docs/reference/coroutines/cancellation-and-timeouts.html)一节<!--
+  -->其指南中[取消与超时](https://www.kotlincn.net/docs/reference/coroutines/cancellation-and-timeouts.html)一文<!--
   -->了解更多细节。
 
 举一个更复杂的例子，我们看看<!--
 -->[异步计算](#异步计算)用例中的 `aRead()` 函数。<!--
--->它可以实现为 Java NIO 中 <!--
--->[`AsynchronousFileChannel`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/AsynchronousFileChannel.html) <!--
--->的挂起扩展函数，它的 <!--
--->[`CompletionHandler`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/CompletionHandler.html) <!--
--->回调接口如下：
+-->它可以实现为 Java NIO 中
+[`AsynchronousFileChannel`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/AsynchronousFileChannel.html) <!--
+-->的挂起扩展函数，它的
+[`CompletionHandler`](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/CompletionHandler.html)
+回调接口如下：
 
 ```kotlin
 suspend fun AsynchronousFileChannel.aRead(buf: ByteBuffer): Int =
@@ -1438,13 +1438,13 @@ suspend fun AsynchronousFileChannel.aRead(buf: ByteBuffer): Int =
     }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/io/io.kt)获取代码。<!--
-  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) <!--
-  -->中实际的实现支持取消以放弃长时间运行的 IO 操作。
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/io/io.kt)获取代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)
+  中实际的实现支持取消以放弃长时间运行的 IO 操作。
 
 如果你需要处理大量有同类回调的函数，你可以定义一个公共<!--
 -->包装函数简便地把他们全部转换成挂起函数。例如，<!--
--->[vert.x](http://vertx.io/) 有一个特有的约定，其中所有异步函数都接受一个<!--
+-->[vert.x](http://vertx.io/) 有一个特有的约定，其中所有异步函数都接收一个<!--
 --> `Handler<AsyncResult<T>>` 回调。要通过协程简化任意的 vert.x 函数，<!--
 -->可以定义下面这个辅助函数：
 
@@ -1461,25 +1461,25 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
     }
 ```
 
-通过这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)` <!--
--->可以在协程中这样调用：`vx { async.foo(params, it) }`。
+使用这个辅助函数，任意异步 vert.x 函数 `async.foo(params, handler)`
+都可以在协程中这样调用：`vx { async.foo(params, it) }`。
 
 ### 构建 Future
 
 定义在 [future](#Future) 用例中类似于 `launch{}` 构建器的 `future{}` 构建器可以用于实现任何 future 或 promise 原语，<!--
--->这在[协程构建器](#协程构建器)做了一些介绍：
+-->这在[协程构建器](#协程构建器)中做了一些介绍：
 
 ```kotlin
 fun <T> future(context: CoroutineContext = CommonPool, block: suspend () -> T): CompletableFuture<T> =
         CompletableFutureCoroutine<T>(context).also { block.startCoroutine(completion = it) }
 ```
 
-它与 `launch{}` 的第一点不同是它返回 <!--
--->[`CompletableFuture`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) 的实例，<!--
+它与 `launch{}` 的第一点不同是它返回
+[`CompletableFuture`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) 的实例，<!--
 -->第二点不同是它包含一个默认为 `CommonPool` 的上下文，因此<!--
 -->其默认执行在 [`ForkJoinPool.commonPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html#commonPool--)，<!--
--->这个默认执行行为类似于  <!--
--->[`CompletableFuture.supplyAsync`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html#supplyAsync-java.util.function.Supplier-) 方法。<!--
+-->这个默认执行行为类似于
+[`CompletableFuture.supplyAsync`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html#supplyAsync-java.util.function.Supplier-) 方法。<!--
 --><!--
 -->`CompletableFutureCoroutine` 的基本实现很直白：
 
@@ -1493,18 +1493,18 @@ class CompletableFutureCoroutine<T>(override val context: CoroutineContext) : Co
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/future.kt)获取代码。<!--
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/future/future.kt)获取代码。<!--
   -->[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中实际的实现更高级，<!--
-  -->因为它要传播对等待结果的期货的取消，以终止协程。
+  -->因为它传播对执行结果的可取消的 future，以取消该协程。
 
 协程完结时调用对应 future 的 `complete` 方法<!--
 -->向协程报告结果。
 
-### 非阻塞睡眠
+### 非阻塞休眠
 
 协程不应使用 [`Thread.sleep`](https://docs.oracle.com/javase/8/docs/api/java/lang/Thread.html#sleep-long-)，<!--
--->因为它阻塞了线程。但是，通过 Java 的 [`ScheduledThreadPoolExecutor`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledThreadPoolExecutor.html) <!--
--->实现挂起的非阻塞 `delay` 函数是非常简单的。
+-->因为它阻塞了线程。但是，通过 Java 的 [`ScheduledThreadPoolExecutor`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledThreadPoolExecutor.html)
+实现挂起的非阻塞 `delay` 函数是非常直截了当的。
 
 ```kotlin
 private val executor = Executors.newSingleThreadScheduledExecutor {
@@ -1516,16 +1516,16 @@ suspend fun delay(time: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): Unit = su
 }
 ```
 
-> 你可以从 [这里](https://github.com/Kotlin/kotlin-coroutines/blob/master/examples/delay/delay.kt) 获取到这段代码。<!--
-  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines)  同样提供了 `delay` 函数。
+> 你可以从[这里](https://github.com/Kotlin/kotlin-coroutines/blob/master/examples/delay/delay.kt)获取到这段代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 同样提供了 `delay` 函数。
 
-注意，这种 `delay` 函数从其单独的“时刻表”线程恢复协程。<!--
+注意，这种 `delay` 函数从其单独的“调度者”线程恢复协程。<!--
 -->那些使用[拦截器](#续体拦截器)的协程，比如 `Swing`，不会在这个线程上执行，<!--
 -->因为它们的拦截器在合适的线程上调度它们。没有拦截器的协程会<!--
--->在时刻表线程上调度。所以这对一个示例来说挺方便的，但是算不上有性能。<!--
--->最好能在相应的拦截器中实现原生的睡眠。
+-->在调度者线程上调度。所以这对一个示例来说挺方便的，但它不是最有效的。<!--
+-->最好能在相应的拦截器中实现原生的休眠。
 
-对于 `Swing` 拦截器，非阻塞睡眠的原生实现应使用专门为此目的设计的 <!--
+对于 `Swing` 拦截器，非阻塞休眠的原生实现应使用专门为此目的设计的 <!--
 -->[`Swing 计时器`](https://docs.oracle.com/javase/8/docs/api/javax/swing/Timer.html)：
 
 
@@ -1540,7 +1540,7 @@ suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
 
 > 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/swing-delay.kt)获取到这段代码。<!--
   -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的 `delay` 实现注意了<!--
-  -->拦截器特异性的睡眠机制，并在适当的情况下自动使用上述方法。
+  -->拦截器特异性的休眠机制，并在适当的情况下自动使用上述方法。
 
 ### 协作式单线程多任务
 
@@ -1914,9 +1914,9 @@ Kotlin 1.3 编译器支持调用实验挂起函数，并将挂起 <!--
 
 ## 版本历史
 
-本节概述了协程设计的每次修订中的变化。
+本节概述了协程设计的诸次修订之间的变化。
 
-### 3.3 版的改动
+### 3.3 版本的改动
 
 > * Coroutines are no longer experimental and had moved to `kotlin.coroutines` package.
 > * The whole section on experimental status is removed and migration section is added.
@@ -1930,11 +1930,11 @@ Kotlin 1.3 编译器支持调用实验挂起函数，并将挂起 <!--
 >   * `intercepted` extension function is added.
 > * Moved non-normative sections with advanced topics and more examples to the appendix at end of the document to simplify reading.
 
-### 3.2 版的改动
+### 3.2 版本的改动
 
 > * Added description of `createCoroutineUnchecked` intrinsic.
 
-### 3.1 版的改动
+### 3.1 版本的改动
 
 This revision is implemented in Kotlin 1.1.0 release.
 
@@ -1942,7 +1942,7 @@ This revision is implemented in Kotlin 1.1.0 release.
 > * `SUSPENDED_MARKER` is renamed to `COROUTINE_SUSPENDED`.
 > * Clarification on experimental status of coroutines added.
 
-### 3 版的改动
+### 3 版本的改动
 
 > This revision is implemented in Kotlin 1.1-Beta.
 > 
@@ -1954,7 +1954,7 @@ This revision is implemented in Kotlin 1.1.0 release.
 >   * `Continuation` interface includes `val context: CoroutineContext`.
 > * `CoroutineIntrinsics` object is replaced with `kotlin.coroutines.intrinsics` package.
 
-### 2 版的改动
+### 2 版本的改动
 
 > This revision is implemented in Kotlin 1.1-M04.
 > 
