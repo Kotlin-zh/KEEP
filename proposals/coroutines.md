@@ -757,8 +757,8 @@ fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequ
 }
 ```
 
-它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)一节）的另一个原语 <!--
--->[`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。<!--
+它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)一节）的另一个原语
+[`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。<!--
 --><!--
 -->不同点在于它*创建*一个协程，但并*不*启动协程，<!--
 -->而是返回表示协程的*初始续体*作为 `Continuation<Unit>` 的引用：
@@ -1114,7 +1114,7 @@ fun <R, T> (suspend R.() -> T).createCoroutineUnintercepted(receiver: R, complet
  
 它们的工作方式类似于 `createCoroutine` 但会返回对未拦截的初始续体的引用。<!--
 -->类似于 `suspendCoroutineUninterceptedOrReturn`，它可用于同步协程以获得更好的性能。<!--
--->例如，下面是 `sequence{}` 使用 `createCoroutineUnintercepted` 优化过的版本：
+-->例如，下面是 `sequence{}` 构建器使用 `createCoroutineUnintercepted` 优化过的版本：
  
 ```kotlin
 fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequence {
