@@ -1545,17 +1545,17 @@ suspend fun Swing.delay(millis: Int): Unit = suspendCoroutine { cont ->
 ### 协作式单线程多任务
 
 在单线程应用中实现多任务非常方便，因为这样就不必<!--
--->处理并发或者共享可变状态了。JS、Python 还有很多其他语言<!--
--->甚至没有线程，但有协作式多任务原语。
+-->处理并发或者共享可变状态了。JS、Python 以及很多其他语言<!--
+-->没有线程，但有协作式多任务原语。
 
 [协程拦截器](#续体拦截器)提供了一个简单的工具来确保<!--
--->所有协程限制在同一线程上。<!--
+-->所有协程被限制在一个单线程上。<!--
 -->[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext.kt)的示例代码定义了 `newSingleThreadContext()` 函数，<!--
 -->它能创建一个单线程执行的服务并使其适应协程拦截器的<!--
 -->需求。
 
-在下面这个单线程的示例中，<!--
--->我们把它和[构造 Future](#构造-Future)一节中的 `future{}` 协程构建器一起使用，<!--
+在下面的示例中，<!--
+-->我们把它和[构造 Future](#构造-Future)小节中定义的 `future{}` 协程构建器一起使用，使其运行在一个单个线程中<!--
 -->尽管它有两个同时处于活动状态的异步任务。
 
 ```kotlin
@@ -1566,13 +1566,13 @@ fun main(args: Array<String>) {
         log("Hello, world!")
         val f1 = future(context) {
             log("f1 is sleeping")
-            delay(1000) // 睡眠1秒
+            delay(1000) // 休眠 1 秒
             log("f1 returns 1")
             1
         }
         val f2 = future(context) {
             log("f2 is sleeping")
-            delay(1000) // 睡眠1秒
+            delay(1000) // 休眠 1 秒
             log("f2 returns 2")
             2
         }
@@ -1585,7 +1585,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext-example.kt)获取完整示例。<!--
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/context/threadContext-example.kt)获取完整示例。<!--
   -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 有
   `newSingleThreadContext` 开箱即用的实现。
 
@@ -1594,18 +1594,18 @@ fun main(args: Array<String>) {
 
 ### 异步序列
 
-[受限挂起](#受限挂起)一节提到的 `sequence{}` 协程构建器<!--
+[受限挂起](#受限挂起)小节展示的 `sequence{}` 协程构建器<!--
 -->是一个*同步*协程的示例。当消费者调用 `Iterator.next()` 时，<!--
 -->协程的生产代码同步执行在同一个线程上。<!--
 -->`sequence{}` 协程块是受限的，第三方挂起<!--
 -->函数无法挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件 IO。
 
-*异步的*序列构建器支持随意挂起和恢复执行。这意味着<!--
+*异步的*序列构建器允许随意挂起和恢复执行。这意味着<!--
 -->其消费者要时刻准备着处理数据还没生产出来的情况。这是<!--
--->挂起函数的原生用例。我们来定义一个<!--
--->类似于普通 <!--
--->[`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/) <!--
--->接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
+-->挂起函数的自然用例。我们来定义一个<!--
+-->类似于普通
+[`Iterator`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-iterator/)
+接口的 `SuspendingIterator` 接口，但其 `next()` 和 `hasNext()` 函数是挂起的：
 
 ```kotlin
 interface SuspendingIterator<out T> {
@@ -1614,9 +1614,9 @@ interface SuspendingIterator<out T> {
 }
 ```
 
-`SuspendingSequence` 的定义类似于标准 <!--
--->[`Sequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence/index.html) <!--
--->但返回 `SuspendingIterator`：
+`SuspendingSequence` 的定义类似于标准
+[`Sequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence/index.html)
+但它返回 `SuspendingIterator`：
 
 ```kotlin
 interface SuspendingSequence<out T> {
@@ -1635,7 +1635,7 @@ interface SuspendingSequenceScope<in T> {
 
 构建器函数 `suspendingSequence{}` 的用法和同步的 `sequence{}` 一样。<!--
 -->它们的区别在于 `SuspendingIteratorCoroutine` 的实现细节以及<!--
--->在下面这种情况中，异步版本接受一个可选的上下文：
+-->在下面这种情况中，以及在这种情况下接受一个可选的上下文是有意义的：
 
 ```kotlin
 fun <T> suspendingSequence(
@@ -1646,15 +1646,15 @@ fun <T> suspendingSequence(
 }
 ```
 
-> 从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence.kt)获取完整代码。<!--
-  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中对 <!--
-  -->`Channel` 原语的实现使用了对应的协程构建器 `produce{}`，<!--
+> 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence.kt)获取完整代码。<!--
+  -->注意：[kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中对
+  `Channel` 原语的实现使用了对应的协程构建器 `produce{}`，<!--
   -->其中对这个概念提供了更复杂的实现。
 
-我们可以用上[单线程多任务](#单线程多任务)一节的 `newSingleThreadContext{}` 上下文<!--
--->和[非阻塞睡眠](#非阻塞睡眠)一节的非阻塞的 `delay` 函数。<!--
+我们可以用[单线程多任务](#单线程多任务)小节中的 `newSingleThreadContext{}` 上下文<!--
+-->和[非阻塞睡眠](#非阻塞睡眠)小节的非阻塞的 `delay` 函数。<!--
 --><!--
--->这样我们就能写一个非阻塞序列的实现来生产
+-->这样我们就能编写一个非阻塞序列的实现来生产
 1 ~ 10 的整数，两数之间间隔 500 毫秒：
 
 ```kotlin
@@ -1670,7 +1670,7 @@ val seq = suspendingSequence(context) {
 -->被任意的挂起函数挂起。注意，<!--
 -->Kotlin [for 循环](https://kotlinlang.org/docs/reference/control-flow.html#for-loops)<!--
 -->的工作方式满足这种序列的约定，因此语言中不需要一个专门的 `await for` 循环结构。<!--
--->普通的 `for` 循环就能用来遍历我们刚刚定义的异步序列。<!--
+-->普通的 `for` 循环就能用来遍历我们在上面定义的异步序列。<!--
 -->生产者没有值的时候它就会挂起：
 
 
@@ -1680,8 +1680,8 @@ for (value in seq) { // 等待生产者生产时挂起
 }
 ```
 
-> [这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence-example.kt)有写好的示例，<!--
-  -->其中用一些日志表示要执行的操作。
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/suspendingSequence/suspendingSequence-example.kt)找到带有一些日志的示例，<!--
+  -->说明此处的执行情况，。
 
 ### 通道
 
@@ -1708,7 +1708,7 @@ interface ReceiveChannel<T> {
 `Channel<T>` 类同时实现这两个接口。<!--
 -->通道缓存满时 `send` 挂起，通道缓存空时 `receive` 挂起。<!--
 -->这样我们可以一字不差地复制 Go 风格的代码。<!--
--->[Go 教程的第4个并发示例](https://tour.golang.org/concurrency/4)<!--
+-->[Go 教程的第 4 个并发示例](https://tour.golang.org/concurrency/4)<!--
 -->中向通道发送 n 个斐波那契数的 `fibonacci` 函数用 Kotlin 实现<!--
 -->看起来是这样：
 
@@ -1731,7 +1731,7 @@ suspend fun fibonacci(n: Int, c: SendChannel<Int>) {
 -->在固定数量的重量线程上调度任意多的轻量协程。<!--
 -->[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/go.kt)<!--
 -->的示例实现简单地<!--
--->写在 Java 通用的的 [`ForkJoinPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html) 里。
+-->在 Java 通用的 [`ForkJoinPool`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html) 之上编写。
 
 使用 `go` 协程构建器，对应的 Go 代码主函数看起来是下面这样，<!--
 -->其中的`mainBlocking` 是简化的辅助函数，它在 `go{}` 的线程池上调用 `runBlocking`：
@@ -1746,17 +1746,17 @@ fun main(args: Array<String>) = mainBlocking {
 }
 ```
 
-> 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-4.kt)查看代码
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-4.kt)查看代码
 
 你可以随意修改通道的缓冲区容量。<!--
 -->为了简化，例子中只实现了缓冲通道（最小缓存 1 个值），<!--
 -->因为无缓冲通道在概念上和我们刚才见过的[异步序列](#异步序列)一样。
 
 
-Go 风格的 `select` 控制流，作用是挂起直到其中一个通道上的一个操作可以生效，<!--
--->可以用 Kotlin DSL 这样实现，<!--
--->因此 [Go 教程的第5个并发示例](https://tour.golang.org/concurrency/5)<!--
--->在 Kotlin 里看起来是这样：
+Go 风格的 `select` 控制流，作用是挂起直到其中一个操作在其中一个通道上可用，<!--
+-->可以实现为 Kotlin DSL，<!--
+-->因此 [Go 教程的第 5 个并发示例](https://tour.golang.org/concurrency/5)<!--
+-->在 Kotlin 中看起来是这样：
 
 ```kotlin
 suspend fun fibonacci(c: SendChannel<Int>, quit: ReceiveChannel<Int>) {
@@ -1777,13 +1777,13 @@ suspend fun fibonacci(c: SendChannel<Int>, quit: ReceiveChannel<Int>) {
 }
 ```
 
-> 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-5.kt)查看代码
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-5.kt)查看代码
 
-例子用到了 `select {...}` 实现，它选择一种情况并返回结果，就像 Kotlin 的 <!--
--->[`when` 表达式](https://kotlinlang.org/docs/reference/control-flow.html#when-expression)，<!--
+示例具有 `select {...}` 的实现，它选择一种情况并返回结果，就像 Kotlin 的
+[`when` 表达式](https://kotlinlang.org/docs/reference/control-flow.html#when-expression)，<!--
 -->还用到了一个方便的 `whileSelect { ... }`，它就是 `while(select<Boolean> { ... })`，但需要的括号比较少。
 
-实现 [Go 教程的第6个并发示例](https://tour.golang.org/concurrency/6)中的默认选项<!--
+实现 [Go 教程的第 6 个并发示例](https://tour.golang.org/concurrency/6)中的默认选项<!--
 -->只需添加另一个选项到 `select {...}` DSL：
 
 ```kotlin
@@ -1808,7 +1808,7 @@ fun main(args: Array<String>) = mainBlocking {
 }
 ```
 
-> 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-6.kt)查看代码
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-6.kt)查看代码
 
 [这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/time.kt)<!--
 -->的 `Time.tick` 和 `Time.after` 用非阻塞的 `delay` 函数实现非常简单。
@@ -1818,15 +1818,15 @@ fun main(args: Array<String>) = mainBlocking {
 
 注意，这是通道的简单实现，只用了一个<!--
 -->锁来管理内部的等待队列。这使得它容易理解和解释。<!--
--->但是，它并不在这个锁下运行用户代码，因此它是完全并发的。<!--
+-->然而，它并不在这个锁下运行用户代码，因此它是完全并发的。<!--
 -->这个锁只在一定程度上限制了它对大量并发线程的可伸缩性。
 
 > 通道和 `select` 在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) <!--
 -->中的实际实现基于无锁的无冲突并发访问数据结构。
 
-这样实现的通道不影响<!--
+这样实现的通道独立于<!--
 -->协程上下文中的拦截器。它可以用于 UI 应用程序，<!--
--->通过[续体拦截器](#续体拦截器)一节<!--
+-->通过[续体拦截器](#续体拦截器)小节<!--
 -->提到的事件线程拦截器，或者任何别的拦截器，或者不使用<!--
 -->任何拦截器也可以（在后一种情况下，实际的执行线程完全由<!--
 -->协程中使用的其他挂起函数的代码决定）。<!--
@@ -1836,9 +1836,9 @@ fun main(args: Array<String>) = mainBlocking {
 
 编写可伸缩的异步应用程序应遵循一个原则，确保<!--
 -->代码挂起（使用挂起函数）而不阻塞，即实际上不阻塞线程。<!--
--->Java并发原语 <!--
--->[`ReentrantLock`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantLock.html) <!--
--->阻塞线程，不应在真正的非阻塞代码中使用。要控制对共享<!--
+-->Java 并发原语
+[`ReentrantLock`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantLock.html)
+阻塞线程，不应在真正的非阻塞代码中使用。要控制对共享<!--
 -->资源的访问，可以定义一个 `Mutex` 类，该类挂起协程的执行，而不是阻塞协程。<!--
 -->这个类的声明看起来是这样：
 
@@ -1851,10 +1851,10 @@ class Mutex {
 
 > 你可以从[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/mutex/mutex.kt)获得完整的实现。<!--
   -->在 [kotlinx.coroutines](https://github.com/kotlin/kotlinx.coroutines) 中的实际实现<!--
-  -->还包含其他的一些函数。
+  -->还包含一些其他的函数。
 
 使用这个非阻塞互斥的实现，<!--
--->[Go教程的第9个并发示例](https://tour.golang.org/concurrency/9)<!--
+-->[Go 教程的第 9 个并发示例](https://tour.golang.org/concurrency/9)<!--
 -->可以用 Kotlin 的 <!--
 -->[`try finally`](https://kotlinlang.org/docs/reference/exceptions.html) <!--
 -->翻译到 Kotlin，这与 Go 的 `defer` 作用相同：
@@ -1878,7 +1878,7 @@ class SafeCounter {
 }
 ```
 
-> 在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-9.kt)查看代码
+> 你可以在[这里](https://github.com/kotlin/kotlin-coroutines-examples/tree/master/examples/channel/channel-example-9.kt)查看代码
 
 ### 从实验性协程移植
 
@@ -1889,7 +1889,7 @@ class SafeCounter {
  
 Kotlin 1.3 编译器支持调用实验挂起函数，并将挂起 <!--
 -->lambdas 表达式传递给用实验性协程编译的库。<!--
--->在幕后，我们创建了对应的稳定和实验性协程接口之间的适配器。
+-->在幕后，我们创建了对应的稳定版与实验性协程接口之间的适配器。
 
 ### 参考
 
