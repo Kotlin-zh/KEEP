@@ -120,7 +120,7 @@ launch {
 }
 ```
 
-这里的 `aRead()` 和 `aWrite()` 是特殊的*挂起函数* —— 它们可以*挂起*代码执行<!--
+这里的 `aRead()` 和 `aWrite()` 是特殊的*挂起函数*——它们可以*挂起*代码执行<!--
 -->（这并不意味着阻塞正在运行它的线程），并在调用完成时*恢复*。<!--
 -->如果我们眯起眼睛，可以想象所有在 `aRead()` 之后的代码已经被包装成一个
 lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此，<!--
@@ -128,7 +128,7 @@ lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此
 
 我们的明确目标是以一种非常通用的方式支持协程，所以在此示例中，<!--
 -->`launch{}`、`.aRead()` 和 `.aWrite()` 只是适应协程工作的**库函数**；<!--
--->`launch` 是*协程构建器* —— 它创建并启动协程，<!--
+-->`launch` 是*协程构建器*——它创建并启动协程，<!--
 -->而 `aRead()` 与 `aWrite()` 作为特殊的<!--
 -->*挂起函数*，它隐式地接受<!--
 -->*续体*（续体就是一般的回调）。
@@ -161,7 +161,7 @@ launch {
 ### Future
 
 还有另一种表达异步计算的方式：通过 future（也称为 promise 或 deferred）。<!--
--->我们将在在示例中使用一个虚构的应用程序接口，将叠加层应用于图像：
+-->我们将在示例中使用一个虚构的应用程序接口，将叠加层应用于图像：
 
 ```kotlin
 val future = runAfterBoth(
@@ -757,7 +757,7 @@ fun <T> sequence(block: suspend SequenceScope<T>.() -> Unit): Sequence<T> = Sequ
 }
 ```
 
-它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)一节）的另一个原语
+它使用了标准库中类似于 `startCoroutine`（解释见[协程构建器](#协程构建器)小节）的另一个原语
 [`createCoroutine`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/create-coroutine.html)。<!--
 --><!--
 -->不同点在于它*创建*一个协程，但并*不*启动协程，<!--
