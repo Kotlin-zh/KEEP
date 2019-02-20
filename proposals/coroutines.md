@@ -1399,7 +1399,7 @@ async 风格的函数。因此，只要用 Kotlin 编写一次挂起函数，<!-
 fun someLongComputation(params: Params, callback: (Value) -> Unit)
 ```
 
-你可以用下面这样的代码直截了当的把它变成挂起函数：
+你可以用下面这样的代码直截了当地把它变成挂起函数：
 
 ```kotlin
 suspend fun someLongComputation(params: Params): Value = suspendCoroutine { cont ->
@@ -1598,7 +1598,7 @@ fun main(args: Array<String>) {
 -->是一个*同步*协程的示例。当消费者调用 `Iterator.next()` 时，<!--
 -->协程的生产代码同步执行在同一个线程上。<!--
 -->`sequence{}` 协程块是受限的，第三方挂起<!--
--->函数无法挂起其执行，比如[包装回调](#包装回调)一节中那种异步文件 IO。
+-->函数无法挂起其执行，比如[包装回调](#包装回调)小节中那种异步文件 IO。
 
 *异步的*序列构建器允许随意挂起和恢复执行。这意味着<!--
 -->其消费者要时刻准备着处理数据还没生产出来的情况。这是<!--
