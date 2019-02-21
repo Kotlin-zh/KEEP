@@ -692,14 +692,14 @@ interface ContinuationInterceptor : CoroutineContext.Element {
 val intercepted = continuation.context[ContinuationInterceptor]?.interceptContinuation(continuation) ?: continuation
 ```
 
-协程框架为每个实际的续体实例缓存拦截过的续体，并且在不再需要时<!--
+协程框架为每个实际的续体实例缓存拦截过的续体，并且当不再需要它时<!--
 -->调用 `releaseInterceptedContinuation(intercepted)`。<!--
--->想了解更多细节请参阅[实现细节](#实现细节)一节。
+-->想了解更多细节请参阅[实现细节](#实现细节)部分。
 
 > 注意，像 `await` 这样的挂起函数实际上不一定会挂起协程的执行。<!--
-  -->例如，[挂起函数](#挂起函数)一节所展现的 `await` 实现<!--
+  -->例如，[挂起函数](#挂起函数)小节所展现的 `await` 实现<!--
   -->在 future 已经完结的情况下就不会使协程真正挂起（在这种情况下 `resume` 会立刻被调用，<!--
-  -->协程的执行并没有被挂起）。只有协程执行中真正被挂起时，续体才会被拦截，<!--
+  -->协程的执行并没有被挂起）。只有协程在执行中真正被挂起时，续体才会被拦截，<!--
   -->即 `suspendCoroutine` 块返回而不调用 `resume`。
 
 
@@ -818,14 +818,14 @@ private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Con
   -->[生成器](#生成器)一节中使用的不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。<!--
   -->相反，其类型是从传递给 `yield` 的参数类型推断得来的。
 
-`yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起。<!--
+`yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起<!--
 -->协程并捕获其续体。续体保存在 `nextStep` 中，<!--
 -->并在调用 `computeNext` 时恢复。
 
 然而，之前展示的 `sequence{}` 和 `yield()`，其续体并不能被任意的挂起函数<!--
 -->在各自的作用域里捕获。它们*同步*地工作。<!--
 -->它们需要对如何捕获续体、<!--
--->在何处存储续体和何时恢复续体保持绝对的控制。它们形成了*限定挂起域*。<!--
+-->在何处存储续体以及何时恢复续体保持绝对的控制。它们形成了*限定挂起域*。<!--
 -->对挂起的限定作用由作用域类或接口上的 `RestrictSuspension` 注解提供，<!--
 -->在上面的示例中这个作用域接口是 `SequenceScope`：
 
