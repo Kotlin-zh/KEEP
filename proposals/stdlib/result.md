@@ -3,7 +3,7 @@
 * **Type**: Standard Library API proposal
 * **Author**: Roman Elizarov
 * **Contributors**: Andrey Breslav, Ilya Gorbunov
-* **Status**: Implemented in 1.3.0
+* **Status**: Implemented in Kotlin 1.3
 * **Related issues**: [KT-18608](https://youtrack.jetbrains.com/issue/KT-18608) 
 * **Discussion**: [KEEP-127](https://github.com/Kotlin/KEEP/issues/127)
 
@@ -317,7 +317,7 @@ naturally for the result type, comparing the corresponding values or exceptions.
 ## Dependencies
 
 This library depends on 
-[`inline class`](https://github.com/zarechenskiy/KEEP/blob/master/proposals/inline-classes.md) 
+[`inline class`](https://github.com/kotlin/KEEP/blob/master/proposals/inline-classes.md) 
 language feature for its efficient implementation. 
 
 ## Limitations
