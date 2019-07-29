@@ -131,7 +131,7 @@ lambda 表达式并作为回调传递给 `aRead()`，对 `aWrite()` 也是如此
 -->`launch` 是*协程构建器*——它创建并启动协程，<!--
 -->而 `aRead()` 与 `aWrite()` 作为特殊的<!--
 -->*挂起函数*，它隐式地接受<!--
--->*续体*（续体就是一般的回调）。
+-->*续体*（续体就是普通的回调）。
 
 > 关于 `launch{}` 的示例代码在[协程构建器](#协程构建器)一节，<!--
 -->关于 `aRead()` 的示例代码在[包装回调](#包装回调)一节。
@@ -354,7 +354,7 @@ launch(Swing) {
   -->*挂起*会被视作是一种特殊的非局部控制转移。
 
 * *挂起函数类型*——表示挂起函数以及挂起 lambda 表达式的函数类型。它就像<!--
-  -->一个一般的[函数类型](https://kotlinlang.org/docs/reference/lambdas.html#function-types)，<!--
+  -->一个普通的[函数类型](https://kotlinlang.org/docs/reference/lambdas.html#function-types)，<!--
   -->但具有 `suspend` 修饰符。举个例子，`suspend () -> Int` 是<!--
   -->一个没有参数、返回 `Int` 的挂起函数的函数类型。一个声明为 `suspend fun foo()  : Int` 的挂起函数<!--
   -->符合上述函数类型。
@@ -381,8 +381,8 @@ launch(Swing) {
   -->从语法上说，挂起点是对一个挂起函数的调用，但*实际*<!--
   -->的挂起在挂起函数调用了标准库中的原始挂起函数时发生。
 
-* *续体*——是挂起的协程在挂起点时的状态。它在概念上代表<!--
-  -->它在挂起点之后的剩余应执行的代码。例如：
+* *续体*——是挂起的协程在挂起点时的状态。它在概念上表示<!--
+  -->在挂起点之后的剩余应执行的代码。例如：
 
   ```kotlin
   sequence {
@@ -645,7 +645,7 @@ suspend fun doSomething() {
 
 它使用了 [`coroutineContext`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines/coroutine-context.html) <!--
 -->顶层属性（位于 `kotlinx.coroutines` 包），<!--
--->以在挂起函数中检索当前协程的上下文。
+-->以用于在挂起函数中检索当前协程的上下文。
 
 ### 续体拦截器
 
@@ -815,7 +815,7 @@ private class SequenceCoroutine<T>: AbstractIterator<T>(), SequenceScope<T>, Con
   -->而且还具有对 [`yieldAll`](http://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence-scope/yield-all.html) 函数的额外支持。
 
 > `sequence` 的实际代码使用了实验性的 `BuilderInference` 特性以支持<!--
-  -->[生成器](#生成器)一节中使用的不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。<!--
+  -->[生成器](#生成器)一节中使用的，不用显式指定序列类型参数 `T` 的 `fibonacci` 声明。<!--
   -->相反，其类型是从传递给 `yield` 的参数类型推断得来的。
 
 `yield` 的实现中使用了 `suspendCoroutine` [挂起函数](#挂起函数)来挂起<!--
