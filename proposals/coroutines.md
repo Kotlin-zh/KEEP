@@ -4,6 +4,7 @@
 * **作者**：Andrey Breslav, Roman Elizarov
 * **贡献者**： Vladimir Reshetnikov, Stanislav Erokhin, Ilya Ryzhenkov, Denis Zharkov
 * **状态**：从 Kotlin 1.3 开始稳定，在 Kotlin 1.1-1.2 中为实验性
+* **英文原文地址**: https://github.com/Kotlin/KEEP/blob/master/proposals/coroutines.md
 
 ## 摘要
 
