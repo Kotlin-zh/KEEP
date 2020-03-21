@@ -930,7 +930,7 @@ c(z)
 -->这是上文代码块通过 CPS 调用挂起函数 `await` 的 Java 伪代码：
 
 ```java
-lass <anonymous_for_state_machine> extends SuspendLambda<...> {
+class <anonymous_for_state_machine> extends SuspendLambda<...> {
     // 状态机当前状态
     int label = 0
     
