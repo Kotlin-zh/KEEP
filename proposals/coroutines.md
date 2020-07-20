@@ -1006,7 +1006,7 @@ class <anonymous_for_state_machine> extends SuspendLambda<...> {
       L0:
         x = 0
       LOOP:
-        if (x > 10) goto END
+        if (x >= 10) goto END
         label = 1
         result = nextNumber().await(this) // 'this' 作为续体传递 
         if (result == COROUTINE_SUSPENDED) return // 如果 await 挂起了执行则返回

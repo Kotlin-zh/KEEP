@@ -68,12 +68,12 @@ As with public API, you should avoid making [binary incompatible changes](https:
 
 However, published API is usually not visible in the sources from the point of view of a library client. Therefore, the compiler in 'Explicit API' mode will not complain about missing KDoc or missing visibility modifier (because it is `internal` anyway). Explicit return type is still required for published API to prevent implementation details exposure.
 
-### Experimental API
+### Opt-in requirements
 
-When one is writing a library, they should use `@Experimental(...)` annotation to propagate the experimental status of types they use.
-If experimental types are used as implementation details across all library, it might be convenient to mark the whole module with `-Xuse-experimental`.
+When one is writing a library, they should use `@RequiresOptIn(...)` annotation to propagate the opt-in requirements of declarations they use (previously known as experimental declarations).
+If the types that require opt-in are used as implementation details across all library, it might be convenient to mark the whole module with `-Xopt-in`.
 In that case, it would be easy to forget to mark the corresponding public API as propagative.
-Therefore, in Explicit API mode, the compiler would still require explicit `@Experimental` or `@UseExperimental` annotation on a declaration with experimental types in the signature, even if the whole module accepts experimental status via `-Xuse-experimental`.
+Therefore, in Explicit API mode, the compiler would still require explicit `@RequireOptIn` or `@OptIn` annotation on a declaration with opt-in requiring types in the signature, even if the whole module opts in via `-Xopt-in`.
 
 ### Inspection exclusions
 
@@ -103,22 +103,45 @@ This mode is enabled by the compiler flag `-Xexplicit-api={strict|warning}`. `st
 `warning` means that the compiler will issue warnings (this will help migration).
 Note: missing KDoc is always a warning, regardless of the state of the flag.
 
-To ease setting up this mode, a DSL would be provided in Kotlin Gradle plugin:
+To ease setting up this mode, a DSL is provided in the Kotlin Gradle plugin:
+
+*Groovy Syntax*
 
 ```gradle
-kotlinOptions {
+kotlin {
+    // convenience methods
     explicitApi()
     // or
-    explicitApi = ExplicitApiMode.Strict
+    explicitApiWarning()
+
+    // setting level explicitly
+    explicitApi = 'strict'
+    // or
+    explicitApi = 'warning'
+}
+```
+
+*Kotlin Syntax*
+
+```kotlin
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
+
+kotlin {
+    // convenience methods
+    explicitApi()
     // or
     explicitApiWarning()
+
+    // setting level explicitly
+    explicitApi = ExplicitApiMode.Strict
     // or
     explicitApi = ExplicitApiMode.Warning
 }
 ```
-Explicit mode enabled here would not affect test sources.
 
-The exact place of these methods (top-level `kotlinOptions`, or compilation, or particular source set) is TBA. Maven plugin option is TBD.
+This is a per-module setting that enables explicit API mode only for module production sources.
+
+Maven plugin option is TBD.
 
 Kotlin plugin in IntelliJ IDEA would recognize that explicit mode is enabled and would offer corresponding intentions and quick-fixes.
 
