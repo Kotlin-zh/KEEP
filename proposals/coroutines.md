@@ -347,7 +347,7 @@ launch(Swing) {
   -->例如，[用例](#用例)所示的跟在 `launch`、`future` 以及 `BuildSequence` 函数后面花括号里的代码块<!--
   -->就是挂起 lambda 表达式。
 
-  > 注意：挂起 lambda 表达式可以在其代码的任意位置调用挂起函数，只要这个位置能编写从这个 lambda 表达式<!--
+  > 注意：常规 lambda 表达式可以在其代码的任意位置调用挂起函数，只要这个位置能编写从这个 lambda 表达式<!--
   -->[非局部](https://kotlinlang.org/docs/reference/returns.html) `return` 的语句。<!--
   -->也就是说，可以在像 [`apply{}` 代码块](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/apply.html)<!--
   -->这样的内联 lambda 表达式中调用挂起函数，<!--
