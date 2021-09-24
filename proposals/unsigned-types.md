@@ -3,7 +3,7 @@
 * **Type**: Design proposal
 * **Authors**: Ilya Gorbunov, Mikhail Zarechenskiy
 * **Contributors**: Andrey Breslav, Roman Elizarov, Nikolay Igotti
-* **Status**: Experimental in Kotlin 1.3
+* **Status**: Partially stable in 1.5, see details in the [Status](#status) section.
 * **Prototype**: Implemented
 * **Related issues**: [KT-191](https://youtrack.jetbrains.com/issue/KT-191)
 * **Discussion**: [KEEP-135](https://github.com/Kotlin/KEEP/issues/135)
@@ -16,8 +16,8 @@ Provide support in the compiler and the standard library in order to introduce t
 
 ### Hexadecimal constants that do not fit in signed types
 
-Currently it's hard or even impossible to use hexadecimal literal constants that result in overflow of the corresponding 
-signed types. That overflow causes the constant to become more wider than expected (e.g. `0xFFFF_FFFE` is `Long`) 
+Currently, it's hard or even impossible to use hexadecimal literal constants that result in overflow of the corresponding 
+signed types. That overflow causes the constant to become wider than expected (e.g. `0xFFFF_FFFE` is `Long`) 
 or even impossible to express in Kotlin: `0x8000_0000_0000_0000`
 
 **Colors**
@@ -41,7 +41,7 @@ takesColor(0xFFCC00CCu)
 
 **Byte arrays initialized in code**
 
-Currently creating a byte array with content specified in code looks extremely verbose in Kotlin:
+Currently, creating a byte array with content specified in code looks extremely verbose in Kotlin:
 
 ```kotlin
 val byteOrderMarkUtf8 = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
@@ -60,7 +60,7 @@ unsigned arithmetic with signed integers (see [Unsigned int considered harmful f
 but one has to be extremely careful when dealing with such tricks and remember which variable represents which type actually in code.
 
 For an unsigned value represented by a signed integer special functions like 
-`divideUnsigned`, `remainderUnsigned`, `toUnsignedString` has to be called instead of the standard ones. 
+`divideUnsigned`, `remainderUnsigned`, `toUnsignedString` have to be called instead of the standard ones. 
 It is very fragile and error prone especially when signed and unsigned values both are used.
 
 
@@ -69,6 +69,25 @@ It is very fragile and error prone especially when signed and unsigned values bo
 When one provides an external declaration for some native platform API (either C API or JS IDL declarations [KT-13541](https://youtrack.jetbrains.com/issue/KT-13541))
 that declaration can contain unsigned types natively. Unsigned types in Kotlin would allow to represent such declarations
 without unwittingly altering their semantics by substituting unsigned integers with signed ones.
+
+## Non-goals
+
+### Non-negative integers
+
+While unsigned integers can only represent positive numbers and zero, it's not a goal to use them 
+where non-negative integers are required by application domain, for example, as a type of collection size or collection index value.
+
+First, even in these cases using signed integers helps to detect accidental overflows and signal error conditions, 
+such as `List.lastIndex` being -1 for an empty list or `List.indexOf` returning -1 when an element is not found in the list.
+
+Second, unsigned integers cannot be treated as a range-limited version of signed ones because their range of values 
+is not a subset of the signed integers range, i.e. neither signed, nor unsigned integers are subtypes of each other.
+
+To reiterate, the main use case of unsigned numbers is when you need to utilize the full bit range of an integer to
+represent positive values.
+
+That is also the reason why conversion from signed values to unsigned and vice-versa works by reinterpreting 
+the bit pattern of a number as unsigned, or as 2-complement signed respectively.
 
 ## Description
 
@@ -92,7 +111,7 @@ To iterate through a range of unsigned values there will be range and progressio
 
 ## Experimental status 
 
-The unsigned types are to be released in Kotlin 1.3 as an [experimental feature](experimental.md).
+The unsigned types are to be released in Kotlin 1.3 as an [experimental feature](opt-in.md).
 This means we do not give compatibility guarantees for the API and language features related to unsigned types.
 
 Their usage without an opt-in will produce a compiler warning about their experimentality.
@@ -406,3 +425,13 @@ How to call the operation that shifts an unsigned integer right:
 #### Bitwise operations for `UByte` and `UShort`
 
 These operations are experimental for `Byte` and `Short`: we haven't decided yet on their contract.
+
+
+## Status
+
+- Unsigned types were introduced as experimental in Kotlin 1.3 and graduated to Beta in Kotlin 1.4.
+- Since Kotlin 1.5, the `UInt`, `ULong`, `UByte`, `UShort` unsigned integer types are stable. 
+  The same goes for operations on these types, ranges, and progressions of them. 
+  Unsigned arrays, varargs, and operations on them remain in Beta.
+  
+

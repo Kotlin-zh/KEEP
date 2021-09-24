@@ -3,7 +3,7 @@
 * **Type**: Design proposal
 * **Author**: Mikhail Zarechenskiy
 * **Contributors**: Andrey Breslav, Denis Zharkov, Dmitry Petrov, Ilya Gorbunov, Roman Elizarov, Stanislav Erokhin, Ilmir Usmanov
-* **Status**: Beta since 1.4.30
+* **Status**: Stable since 1.5.0
 * **Prototype**: Implemented in Kotlin 1.2.30
 
 Discussion of this proposal is held in [this issue](https://github.com/Kotlin/KEEP/issues/104).
@@ -166,11 +166,7 @@ Currently, inline classes must satisfy the following requirements:
 - Inline class cannot have backing fields
     - Hence, it follows that inline class can have only simple computable properties (no lateinit/delegated properties)
 - Inline class must be a toplevel or a nested class. Local and inner inline classes are not allowed.
-- Inline classes cannot have `var` properties as well as extension `var` properties.
-
-Let us explain the rationale behind the last limitation. We want the `value.properties = 1` syntax to change the value of value-based
-class: instead of generating `value.setProperty(1)` the compiler will generate something like `value = value.clone(property = 1)`.
-So, we reserve the syntax of mutating property to mutate the class in the future.
+- Inline classes cannot have `var` properties with backing fields.
 
 ### Other restrictions
 
@@ -260,7 +256,7 @@ can hold `null` values on JVM and can be safely used as a mapped type.
 
 So, 
 - not-null inline class types over reference types are mapped directly to the underlying reference type
-- not-null inline class types over not-null reference types are mapped directly to the underlying reference type
+- nullable inline class types over not-null reference types are mapped directly to the underlying reference type
 
 ##### Inline classes over nullable reference types
 
@@ -740,6 +736,15 @@ schemes: if it does not find a function with new mangled suffix it uses the old
 one.
 
 1.4.30 standard library uses the old scheme to preserve binary compatibility.
+
+Note, that functions without inline class parameter, except `Result`, and 
+top-level functions, returning `Result`, are not mangled. We do not mangle 
+functions with `Result` parameters to preserve binary compatibility, since
+`Result` is a stable inline class since 1.3 and changes in mangling algorithm 
+would break binary compatibility.
+However, we did not allow returning `Result` from functions until 1.5.0, so
+mangling methods returning `Result` is not a problem. We mangle methods only,
+since we do not mangle top-level functions, returning inline classes.
 
 *Constructors* 
 
